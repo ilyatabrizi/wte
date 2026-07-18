@@ -1,0 +1,1029 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WTE — Went To Event</title>
+<meta name="description" content="WTE — Went To Event. Discover events near you, join in two taps, and keep a record of the good ones.">
+<meta name="theme-color" content="#0B0A0C">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WTE">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --ink:#0B0A0C;--surface:#141215;--surface2:#1c191e;--bone:#F4F1EC;--ember:#FF5B3D;--ash:#8A848F;
+    --line:rgba(138,132,143,.14);--line2:rgba(138,132,143,.24);--good:#4BB07A;--gold:#C9A86A;
+    --top:env(safe-area-inset-top);--bot:env(safe-area-inset-bottom);
+  }
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;overscroll-behavior:none}
+  body{background:#050406;color:var(--bone);
+    font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  #stage{height:100dvh;display:flex;align-items:stretch;justify-content:center;background:var(--ink)}
+  #device{position:relative;width:100%;max-width:480px;height:100dvh;background:var(--ink);overflow:hidden;margin:0 auto;display:flex;flex-direction:column}
+  @media(min-width:481px){
+    #stage{background:radial-gradient(130% 90% at 15% -5%,#16100f 0%,#070609 62%)}
+    #device{box-shadow:0 0 0 1px rgba(138,132,143,.10)}
+  }
+  #app{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;position:relative;scrollbar-width:none;padding-top:max(var(--top),12px);overscroll-behavior-y:contain}
+  #app::-webkit-scrollbar{display:none}
+  #footer{flex:none;position:relative;z-index:36}
+  .scroll{scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .scroll::-webkit-scrollbar{display:none;width:0;height:0}
+  .ic{display:inline-flex;align-items:center;justify-content:center;line-height:0}
+  .ic svg{display:block}
+  .cov{position:absolute;inset:0;width:100%;height:100%}
+  .covimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .avimg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit}
+  .wtemark{height:1em;width:auto;vertical-align:-0.18em}
+  .press{transition:transform .16s cubic-bezier(.22,1,.36,1)}
+  .press:active{transform:scale(.96)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:20px}
+  .glass{background:rgba(11,10,12,.5);-webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%);border:1px solid var(--line2)}
+  .btn{border:none;background:var(--ember);color:#0B0A0C;border-radius:15px;padding:16px;font-weight:600;font-size:15.5px;letter-spacing:-.01em;cursor:pointer;width:100%}
+  .btn-ghost{border:1px solid var(--line2);background:transparent;color:var(--bone);border-radius:15px;padding:15px;font-weight:600;font-size:15px;cursor:pointer;width:100%}
+  .eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .h1{font-weight:700;font-size:29px;letter-spacing:-.03em;color:var(--bone)}
+  .mut{color:var(--ash)}
+  .hicon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--bone);cursor:pointer;padding:0}
+  .avatar{flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--bone);font-weight:600;overflow:hidden;position:relative}
+  .vb{display:inline-flex;vertical-align:middle}
+  .footwrap{background:rgba(11,10,12,.66);-webkit-backdrop-filter:blur(30px) saturate(1.9);backdrop-filter:blur(30px) saturate(1.9);border-top:1px solid rgba(138,132,143,.16);padding:14px 20px calc(max(var(--bot),10px) + 8px)}
+  .navbar{display:flex;align-items:center;justify-content:space-between;padding:7px 12px calc(max(var(--bot),8px) + 5px);
+    background:rgba(11,10,12,.66);-webkit-backdrop-filter:blur(30px) saturate(1.9);backdrop-filter:blur(30px) saturate(1.9);border-top:1px solid rgba(138,132,143,.16)}
+  .navitem{flex:1;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 0;color:var(--ash);transition:color .18s;position:relative}
+  .navitem .lab{font-size:10px;font-weight:600}
+  .navitem.on{color:var(--ember)}
+  .navitem .dot{position:absolute;top:2px;left:50%;transform:translateX(9px);min-width:6px;height:6px;border-radius:999px;background:var(--ember)}
+  .seg{background:none;border:none;cursor:pointer;padding:0 0 11px;position:relative;font-weight:600;font-size:15px;letter-spacing:-.01em;color:var(--ash);white-space:nowrap;flex:none}
+  .seg.on{color:var(--bone);font-weight:700}
+  .seg.on:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;border-radius:2px;background:var(--ember)}
+  .chip{cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--bone);border-radius:999px;padding:9px 15px;font-size:13.5px;font-weight:600;white-space:nowrap}
+  .chip.on{border-color:var(--bone);background:var(--bone);color:#0B0A0C}
+  .fchip{display:inline-flex;align-items:center;gap:6px;cursor:pointer;border:1px solid var(--line2);background:var(--surface);color:var(--bone);border-radius:999px;padding:8px 13px;font-size:13px;font-weight:600;white-space:nowrap}
+  .prem-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(201,168,106,.5);color:var(--gold);border-radius:999px;padding:4px 9px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .bubble{max-width:76%;padding:10px 14px;border-radius:18px;font-size:14.5px;line-height:1.4;word-wrap:break-word}
+  .bubble.me{background:var(--ember);color:#0B0A0C;border-bottom-right-radius:5px;align-self:flex-end}
+  .bubble.them{background:var(--surface2);color:var(--bone);border-bottom-left-radius:5px;align-self:flex-start}
+  .sheet-bg{position:absolute;inset:0;z-index:50;background:rgba(5,4,6,.66);animation:fade .25s ease both}
+  .sheet{position:absolute;left:0;right:0;bottom:0;z-index:51;background:var(--surface);border-radius:26px 26px 0 0;border-top:1px solid var(--line2);padding:9px 20px calc(max(var(--bot),14px) + 6px);animation:sheet .36s cubic-bezier(.22,1,.36,1) both;max-height:92%;overflow-y:auto}
+  .grab{width:38px;height:4px;border-radius:2px;background:var(--line2);margin:0 auto 16px}
+  .stepdot{height:4px;border-radius:2px;background:var(--surface2);flex:1;transition:background .25s}
+  .stepdot.on{background:var(--ember)}
+  .field{width:100%;border:1px solid var(--line2);background:var(--surface2);border-radius:13px;padding:14px;font-size:15px;color:var(--bone);outline:none}
+  .field:focus{border-color:var(--ember)}
+  .wheel{position:relative;height:224px;overflow:hidden}
+  .wheel:before,.wheel:after{content:"";position:absolute;left:0;right:0;height:89px;z-index:3;pointer-events:none}
+  .wheel:before{top:0;background:linear-gradient(180deg,var(--surface) 8%,rgba(20,18,21,0))}
+  .wheel:after{bottom:0;background:linear-gradient(0deg,var(--surface) 8%,rgba(20,18,21,0))}
+  .wband{position:absolute;top:89px;left:8px;right:8px;height:46px;border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);z-index:2;pointer-events:none;border-radius:12px}
+  .cws{height:100%;overflow-y:scroll;scroll-snap-type:y mandatory;perspective:1100px;position:relative}
+  .cws::-webkit-scrollbar{display:none}
+  .wsp{height:89px}
+  .witem{height:46px;scroll-snap-align:center;display:flex;align-items:center;justify-content:center;gap:10px;transform-style:preserve-3d;backface-visibility:hidden;will-change:transform,opacity;cursor:pointer}
+  .witem .wl{font-weight:600;font-size:20px;letter-spacing:-.015em;color:var(--bone);white-space:nowrap}
+  .witem .wc{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--ash)}
+  .rise{animation:rise .5s cubic-bezier(.22,1,.36,1) both}
+  .fadein{animation:fade .3s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pop{0%{transform:scale(.8);opacity:0}55%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+  @keyframes sheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  @keyframes toast{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+  :focus-visible{outline:2px solid var(--ember);outline-offset:2px}
+  @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="stage"><div id="device"></div></div>
+<script>
+"use strict";
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function money(n){return n===0?'Free':'$'+(Math.round(n*100)/100).toFixed(n%1?2:0).replace(/\.00$/,'');}
+function hashStr(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function rng(seed){var t=seed>>>0;return function(){t=(t+0x6D2B79F5)>>>0;var x=Math.imul(t^(t>>>15),1|t);x=(x+Math.imul(x^(x>>>7),61|x))^x;return((x^(x>>>14))>>>0)/4294967296;};}
+function pick(r,a){return a[Math.floor(r()*a.length)];}
+function initialsOf(name){var p=name.split(' ');return(((p[0]||'')[0]||'')+((p[1]||'')[0]||'')).toUpperCase();}
+
+/* ---------- icons (thin line, currentColor) ---------- */
+var RAW={
+ home:'<path d="M4 11.4 12 5l8 6.4V19a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',
+ explore:'<circle cx="12" cy="12" r="8.4"/><path d="M15.4 8.6l-2.1 4.7-4.7 2.1 2.1-4.7z"/>',
+ chat:'<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4 3.5V16H6.5A2.5 2.5 0 0 1 4 13.5z"/>',
+ ticket:'<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5v2.2a1.6 1.6 0 0 0 0 3.1v2.7A1.5 1.5 0 0 1 18.5 18h-13A1.5 1.5 0 0 1 4 16.5v-2.7a1.6 1.6 0 0 0 0-3.1z"/><path d="M14 7v11" stroke-dasharray="1.4 2.4"/>',
+ user:'<circle cx="12" cy="8.2" r="3.4"/><path d="M5.5 20c1-3.5 3.7-5 6.5-5s5.5 1.5 6.5 5"/>',
+ users:'<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.9-3 2.9-4.3 5.5-4.3S13.6 16 14.5 19"/><path d="M15.5 6.2a3 3 0 0 1 0 5.6M17 14.8c2 .5 3.2 1.8 3.7 4.2"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/>',
+ pin:'<path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11z"/><circle cx="12" cy="10" r="2.3"/>',
+ chevD:'<path d="M6 9l6 6 6-6"/>',
+ chevR:'<path d="M9 5l7 7-7 7"/>',
+ chevL:'<path d="M15 5l-7 7 7 7"/>',
+ chevU:'<path d="M6 15l6-6 6 6"/>',
+ share:'<path d="M12 15V4M8 8l4-4 4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"/>',
+ cal:'<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3"/>',
+ calCheck:'<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3M9 14.5l2 2 4-4.5"/>',
+ clock:'<circle cx="12" cy="12" r="8.4"/><path d="M12 7.5V12l3 2"/>',
+ bell:'<path d="M6.5 9.5a5.5 5.5 0 0 1 11 0c0 4.5 2 5.5 2 5.5H4.5s2-1 2-5.5z"/><path d="M10 19a2 2 0 0 0 4 0"/>',
+ sliders:'<path d="M4 7h11M18 7h2M4 12h4M11 12h9M4 17h9M16 17h4"/><circle cx="16.5" cy="7" r="1.7"/><circle cx="9.5" cy="12" r="1.7"/><circle cx="13.5" cy="17" r="1.7"/>',
+ sort:'<path d="M7 5v14M4 16l3 3 3-3M17 19V5M14 8l3-3 3 3"/>',
+ map:'<path d="M9 4 4 6v14l5-2 6 2 5-2V4l-5 2-6-2z"/><path d="M9 4v14M15 6v14"/>',
+ heart:'<path d="M12 20s-7-4.6-7-9.3A3.9 3.9 0 0 1 12 8a3.9 3.9 0 0 1 7-.3C19 11.4 12 20 12 20z"/>',
+ bookmark:'<path d="M6 4.5h12a1 1 0 0 1 1 1V20l-7-4-7 4V5.5a1 1 0 0 1 1-1z"/>',
+ cog:'<circle cx="12" cy="12" r="3.1"/><path d="M19.4 13.5l1.4-1.5-1.4-1.5.3-2-2-.5-.8-1.9-1.9.8L12 3.5l-1.5 1-1.9-.8-.8 1.9-2 .5.3 2-1.4 1.5 1.4 1.5-.3 2 2 .5.8 1.9 1.9-.8L12 20.5l1.5-1 1.9.8.8-1.9 2-.5-.3-2z"/>',
+ shield:'<path d="M12 3.5 19 6v5c0 5-3.2 8-7 9.5C8.2 19 5 16 5 11V6z"/><path d="M9.2 12l2 2 3.6-4"/>',
+ flag:'<path d="M6 21V4M6 5h11l-2 3 2 3H6"/>',
+ block:'<circle cx="12" cy="12" r="8.4"/><path d="M6.2 6.2 17.8 17.8"/>',
+ mute:'<path d="M4 9.5h3l4-3.2v11.4l-4-3.2H4z"/><path d="M15.5 9.5 20 14M20 9.5 15.5 14"/>',
+ lock:'<rect x="5" y="10.5" width="14" height="10" rx="2.4"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/>',
+ star:'<path d="M12 4.5l2.3 4.9 5.2.6-3.9 3.6 1.1 5.3L12 16.7 7.2 19l1.1-5.3-3.9-3.6 5.2-.6z"/>',
+ camera:'<rect x="3.5" y="7" width="17" height="13" rx="3"/><circle cx="12" cy="13.2" r="3.2"/><path d="M8.5 7l1.4-2.2h4.2L15.5 7"/>',
+ image:'<rect x="4" y="5" width="16" height="14" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M5 17l4.5-4 3 2.5L16 11l3 3.5"/>',
+ send:'<path d="M5 12 20 5l-4.5 15-3.5-6z"/><path d="M12 14l3.5-6"/>',
+ more:'<circle cx="5.5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="18.5" cy="12" r="1.5" fill="currentColor" stroke="none"/>',
+ userPlus:'<circle cx="10" cy="8.2" r="3.4"/><path d="M4 20c.9-3.3 3.3-4.8 6-4.8 1 0 1.9.2 2.7.6"/><path d="M17.5 14v6M14.5 17h6"/>',
+ globe:'<circle cx="12" cy="12" r="8.4"/><path d="M3.6 12h16.8M12 3.6c2.4 2.3 3.6 5.2 3.6 8.4S14.4 18.1 12 20.4c-2.4-2.3-3.6-5.2-3.6-8.4S9.6 5.9 12 3.6z"/>',
+ sparkle:'<path d="M12 4l1.6 4.9L18.5 10l-4.9 1.6L12 16l-1.6-4.4L5.5 10l4.9-1.1z"/>',
+ diamond:'<path d="M6 4h12l3 5-9 11L3 9z"/><path d="M3 9h18M9 4l-1.5 5L12 20l4.5-11L15 4"/>',
+ check:'<path d="M5 13l4 4 10-11"/>',
+ x:'<path d="M6 6l12 12M18 6 6 18"/>',
+ trash:'<path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/>',
+ doc:'<path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1z"/><path d="M14 3.5V8h4"/>',
+ eyeOff:'<path d="M4 4l16 16M9.9 5.2A9 9 0 0 1 12 5c5 0 8.5 4.5 9.5 7-.4 1-1.3 2.4-2.7 3.7M6.2 7.6C4.4 8.9 3.2 10.7 2.5 12c1 2.5 4.5 7 9.5 7 1.3 0 2.5-.3 3.6-.8"/><path d="M9.6 9.8a3 3 0 0 0 4.2 4.2"/>',
+ grid:'<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/>',
+ waitlist:'<circle cx="12" cy="12" r="8.4"/><path d="M12 7.5V12l3.5 2"/>',
+ minus:'<path d="M5 12h14"/>',
+ pencil:'<path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/>',
+ mail:'<rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="M4 7l8 6 8-6"/>',
+ phone:'<path d="M6 3.5h4l1.5 4.5-2 1.5a11 11 0 0 0 5 5l1.5-2 4.5 1.5v4a2 2 0 0 1-2 2C11 20 4 13 4 5.5a2 2 0 0 1 2-2z"/>',
+ key:'<circle cx="8" cy="8" r="3.5"/><path d="M10.5 10.5 20 20M17 17l2-2M14 14l2-2"/>',
+ at:'<circle cx="12" cy="12" r="4"/><path d="M16 8v5a2.5 2.5 0 0 0 5 0v-1a9 9 0 1 0-3.5 7.2"/>',
+ moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+ help:'<circle cx="12" cy="12" r="8.4"/><path d="M9.5 9.5a2.6 2.6 0 0 1 5 .8c0 1.8-2.5 2-2.5 3.7"/><circle cx="12" cy="17" r="1" fill="currentColor" stroke="none"/>',
+ info:'<circle cx="12" cy="12" r="8.4"/><path d="M12 11v5"/><circle cx="12" cy="7.8" r="1" fill="currentColor" stroke="none"/>',
+ logout:'<path d="M14 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h8M14 12H9M14 12l-3-3M14 12l-3 3M14 12h6"/>',
+ bolt:'<path d="M13 3 5 13h6l-1 8 8-11h-6z"/>',
+ wallet:'<rect x="3.5" y="6" width="17" height="13" rx="3"/><path d="M3.5 10h17M16 13.5h1.5"/>',
+ qr:'<rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2M20 14v6M14 20h6M18 16v2"/>'
+};
+function ico(name,size,sw){var s=RAW[name]||'';return '<span class="ic"><svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+(sw||1.85)+'" stroke-linecap="round" stroke-linejoin="round">'+s+'</svg></span>';}
+function heartIco(on,size){return '<span class="ic" style="color:'+(on?'#FF5B3D':'inherit')+'"><svg width="'+(size||18)+'" height="'+(size||18)+'" viewBox="0 0 24 24" fill="'+(on?'#FF5B3D':'none')+'" stroke="'+(on?'#FF5B3D':'currentColor')+'" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">'+RAW.heart+'</svg></span>';}
+function vbadge(size){var s=size||15;return '<span class="vb" title="Verified member" style="width:'+s+'px;height:'+s+'px"><svg width="'+s+'" height="'+s+'" viewBox="0 0 24 24" fill="none"><path d="M12 2.4l2.3 1.7 2.9-.2 1 2.7 2.4 1.6-.8 2.8L21 12l-1.9 2.2.8 2.8-2.4 1.6-1 2.7-2.9-.2L12 22.6l-2.3-1.7-2.9.2-1-2.7L3.4 17l.8-2.8L3 12l1.2-2.2-.8-2.8 2.4-1.6 1-2.7 2.9.2z" fill="#FF5B3D"/><path d="M8.6 12.2l2.2 2.2 4.6-5" stroke="#0B0A0C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';}
+
+/* ---------- procedural cover art ---------- */
+var COV={
+ Nightlife:{g:['#2a1140','#160a22'],a:'#c94fd6',m:'beams'},Music:{g:['#241546','#120a24'],a:'#8a6cff',m:'eq'},
+ Fitness:{g:['#3a1e0c','#180d08'],a:'#ff8a3d',m:'sun'},Wellness:{g:['#0f3a2c','#0a1f18'],a:'#3fcaa0',m:'rings'},
+ Food:{g:['#3a1c0e','#1c0f0a'],a:'#ff7a4d',m:'plate'},Art:{g:['#0e2f3a','#0a1a20'],a:'#39b6c9',m:'stroke'},
+ Sports:{g:['#20330f','#111d08'],a:'#8ec63f',m:'field'},Talks:{g:['#12203f','#0b1120'],a:'#5b8cff',m:'wave'},
+ Comedy:{g:['#3a2c0c','#1c1608'],a:'#ffce4d',m:'spot'},Markets:{g:['#33240f','#1a1208'],a:'#e0a24d',m:'bunting'},
+ Film:{g:['#1a2340','#0d1120'],a:'#6f86c9',m:'film'},Theatre:{g:['#340f1c','#1a0810'],a:'#e04d6b',m:'spot'},
+ Workshops:{g:['#2a260f','#161408'],a:'#cabe4d',m:'field'},Outdoors:{g:['#123a24','#0a1f14'],a:'#4dca6b',m:'sun'},
+ Community:{g:['#2a1533','#160a1c'],a:'#b76ce0',m:'rings'}
+};
+function motif(m,a,s){var o='',i;
+ if(m==='beams'){for(i=0;i<4;i++){var x=30+i*95+(s%28);o+='<polygon points="'+x+',300 '+(x+26)+',300 '+(x+150)+',-20 '+(x+118)+',-20" fill="'+a+'" opacity="'+(0.05+0.03*(i%2))+'"/>';}return o+'<circle cx="'+(290-(s%70))+'" cy="66" r="86" fill="'+a+'" opacity="0.15"/><circle cx="'+(290-(s%70))+'" cy="66" r="38" fill="'+a+'" opacity="0.22"/>';}
+ if(m==='eq'){for(i=0;i<11;i++){var h=36+((s*7+i*53)%150);o+='<rect x="'+(18+i*34)+'" y="'+(300-h)+'" width="16" height="'+h+'" rx="6" fill="'+a+'" opacity="'+(0.10+0.04*(i%3))+'"/>';}return o;}
+ if(m==='sun'){for(i=0;i<5;i++)o+='<line x1="'+(50+i*18)+'" y1="'+(118-i*9)+'" x2="'+(350-i*18)+'" y2="'+(118-i*9)+'" stroke="'+a+'" stroke-width="2" opacity="'+(0.16-i*0.02)+'"/>';return '<circle cx="200" cy="250" r="128" fill="'+a+'" opacity="0.15"/><circle cx="200" cy="250" r="78" fill="'+a+'" opacity="0.22"/>'+o;}
+ if(m==='rings'){for(i=0;i<5;i++)o+='<circle cx="298" cy="86" r="'+(28+i*36)+'" fill="none" stroke="'+a+'" stroke-width="2" opacity="'+(0.2-i*0.028)+'"/>';return o;}
+ if(m==='plate')return '<circle cx="200" cy="150" r="94" fill="none" stroke="'+a+'" stroke-width="3" opacity="0.2"/><circle cx="200" cy="150" r="58" fill="'+a+'" opacity="0.12"/><line x1="118" y1="150" x2="150" y2="150" stroke="'+a+'" stroke-width="3" opacity="0.2"/><line x1="250" y1="150" x2="282" y2="150" stroke="'+a+'" stroke-width="3" opacity="0.2"/>';
+ if(m==='stroke')return '<path d="M-20 236 C 120 120, 260 300, 440 138" stroke="'+a+'" stroke-width="40" fill="none" opacity="0.13" stroke-linecap="round"/><path d="M-20 178 C 140 258, 240 60, 440 208" stroke="'+a+'" stroke-width="16" fill="none" opacity="0.16" stroke-linecap="round"/>';
+ if(m==='field'){for(i=0;i<6;i++)o+='<line x1="0" y1="'+(i*60)+'" x2="400" y2="'+(i*60)+'" stroke="'+a+'" stroke-width="2" opacity="0.09"/>';return o+'<circle cx="200" cy="150" r="58" fill="none" stroke="'+a+'" stroke-width="3" opacity="0.16"/>';}
+ if(m==='wave'){var w='M0 200';for(i=0;i<=8;i++)w+=' Q '+(i*50+25)+' '+(i%2?150:250)+' '+((i+1)*50)+' 200';return '<path d="'+w+'" stroke="'+a+'" stroke-width="6" fill="none" opacity="0.18"/><path d="'+w+'" stroke="'+a+'" stroke-width="2" fill="none" opacity="0.12" transform="translate(0,26)"/>';}
+ if(m==='spot')return '<polygon points="200,-20 118,300 282,300" fill="'+a+'" opacity="0.14"/><circle cx="200" cy="40" r="26" fill="'+a+'" opacity="0.26"/>';
+ if(m==='bunting'){for(i=0;i<9;i++)o+='<polygon points="'+(i*48)+',0 '+(i*48+48)+',0 '+(i*48+24)+',44" fill="'+a+'" opacity="'+(0.10+0.05*(i%2))+'"/>';return o;}
+ if(m==='film'){o='<rect x="0" y="0" width="34" height="300" fill="'+a+'" opacity="0.12"/><rect x="366" y="0" width="34" height="300" fill="'+a+'" opacity="0.12"/>';for(i=0;i<7;i++)o+='<rect x="8" y="'+(10+i*42)+'" width="18" height="26" rx="3" fill="#000" opacity="0.25"/><rect x="374" y="'+(10+i*42)+'" width="18" height="26" rx="3" fill="#000" opacity="0.25"/>';return o+'<polygon points="180,110 180,190 250,150" fill="'+a+'" opacity="0.2"/>';}
+ return '';}
+function covSvg(ev){var c=COV[ev.cat]||COV.Nightlife;var gid='cg_'+ev.cat;
+ return '<svg class="cov" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0.35" y2="1"><stop offset="0" stop-color="'+c.g[0]+'"/><stop offset="1" stop-color="'+c.g[1]+'"/></linearGradient></defs><rect width="400" height="300" fill="url(#'+gid+')"/>'+motif(c.m,c.a,ev.id||1)+'</svg>';}
+/* real, verified Unsplash photos per category — procedural covSvg shows behind as fallback */
+var IMG={
+ Art:['1460661419201-fd4cecdf8a8b','1531058020387-3be344556be6'],
+ Comedy:['1527224538127-2104bb71c51b','1585699324551-f6c309eedeca'],
+ Community:['1511632765486-a01980e01a18','1528605248644-14dd04022da1'],
+ Film:['1440404653325-ab127d49abc1','1489599849927-2ee91cede3ba'],
+ Fitness:['1476480862126-209bfaa8edc8','1517836357463-d25dfeac3438','1518611012118-696072aa579a','1571019613454-1cb2f99b2d8b'],
+ Food:['1414235077428-338989a2e8c0','1424847651672-bf20a4b0982b','1476224203421-9ac39bcb3327','1517248135467-4c7edcad34c4','1555939594-58d7cb561ad1'],
+ Markets:['1488459716781-31db52582fe9','1524850011238-e3d235c7d4c9'],
+ Music:['1459749411175-04bf5292ceea','1470225620780-dba8ba36b745','1501386761578-eac5c94b800a','1506157786151-b8491531f063','1524368535928-5b5e00ddc76b'],
+ Nightlife:['1470229722913-7c0e2dbbafd3','1492684223066-81342ee5ff30','1516450360452-9312f5e86fc7','1533174072545-7a4b6ad7a6c3'],
+ Outdoors:['1454496522488-7a8e488e8606','1551632811-561732d1e306'],
+ Sports:['1431324155629-1a6deb1dec8d','1461896836934-ffe607ba8211','1517649763962-0c623066013b'],
+ Talks:['1475721027785-f74eccf877e2','1505373877841-8d25f7d46678','1515187029135-18ee286d815b'],
+ Theatre:['1503095396549-807759245b35','1507924538820-ede94a04019d'],
+ Wellness:['1506126613408-eca07ce68773','1540206395-68808572332f','1544367567-0f2fcb009e0b','1591228127791-8e2eaef098d3'],
+ Workshops:['1452860606245-08befc0ff44b','1503387762-592deb58ef4e']
+};
+var PORTRAITS=['1438761681033-6461ffad8d80','1472099645785-5658abf4ff4e','1487412720507-e7ab37603c6f','1494790108377-be9c29b29330','1500648767791-00dcc994a43e','1502685104226-ee32379fefbe','1506794778202-cad84cf45f1d','1507003211169-0a1dd7228f2d','1517841905240-472988babdf9','1519345182560-3f2917c472ef','1522075469751-3a6694fb2f61','1524504388940-b1c1722653e1','1534528741775-53994a69daeb','1544005313-94ddf0286df2'];
+function photoUrl(id,w){return 'https://images.unsplash.com/photo-'+id+'?w='+(w||800)+'&q=80&auto=format&fit=crop';}
+function imgLayer(ev){var arr=IMG[ev.cat];if(!arr||!arr.length||ev.userMade)return '';var id=arr[(ev.id||1)%arr.length];return '<img class="covimg" loading="lazy" alt="" src="'+photoUrl(id)+'" onerror="this.remove()">';}
+function cov(ev){return covSvg(ev)+imgLayer(ev);}
+function avPhoto(u){return (u&&u.photo)?'<img class="avimg" alt="" loading="lazy" src="'+u.photo+'" onerror="this.remove()">':'';}
+function userCover(key){var u=USERS[key]||{};var cat=['Nightlife','Music','Wellness','Food','Art'][(hashStr(key)%5)];var c=COV[cat];var gid='ug_'+key;
+ return '<svg class="cov" viewBox="0 0 400 160" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0" stop-color="'+c.g[0]+'"/><stop offset="1" stop-color="'+c.g[1]+'"/></linearGradient></defs><rect width="400" height="160" fill="url(#'+gid+')"/>'+motif(c.m,c.a,hashStr(key))+'</svg>';}
+
+/* ---------- users ---------- */
+var USERS={
+ ava:{name:'Ava Reyes',handle:'avareyes',initials:'AR',bg:'linear-gradient(140deg,#3a2f4a,#241d2c)',bio:'Chasing warehouse sets and slow rooftop mornings.',followers:428,following:186},
+ maya:{name:'Maya Sato',handle:'mayasato',initials:'MS',bg:'#3a2540',premium:true,bio:'DJ-adjacent. I know someone at every door.',followers:'12.4k',following:301},
+ jules:{name:'Jules Amara',handle:'julesa',initials:'JA',bg:'#1e3540',bio:'Film photos, late dinners, longer walks.',followers:2140,following:412},
+ ravi:{name:'Ravi Deshpande',handle:'ravid',initials:'RD',bg:'#402a1c',bio:'Climbing, curries and questionable 6am plans.',followers:876,following:534},
+ dee:{name:'Dee Larson',handle:'deelarson',initials:'DL',bg:'#2f3a1e',bio:'Sunrise yoga, sunset negronis.',followers:1503,following:288},
+ noor:{name:'Noor Haddad',handle:'noorh',initials:'NH',bg:'#1e2a40',bio:'Comedy nights and market Sundays.',followers:934,following:377},
+ sam:{name:'Sam Ortega',handle:'samo',initials:'SO',bg:'#3a2f4a',bio:'Five-a-side, then tacos. Non-negotiable.',followers:645,following:503},
+ theo:{name:'Theo Marchetti',handle:'theom',initials:'TM',bg:'#402038',premium:true,bio:'Host & member. Rooftop tables, long tables.',followers:'21.8k',following:120},
+ ines:{name:'Ines Laurent',handle:'ineslaurent',initials:'IL',bg:'#1f3a2e',premium:true,bio:'Natural wine, neo-soul, no small talk.',followers:'8.1k',following:214},
+ kenji:{name:'Kenji Watanabe',handle:'kenjiw',initials:'KW',bg:'#2a2540',bio:'Vinyl only. Ramen after.',followers:3120,following:198},
+ lucia:{name:'Lucia Ferreira',handle:'luciaf',initials:'LF',bg:'#3a1e2a',premium:true,bio:'Dancer. Two left feet on purpose.',followers:'15.2k',following:265},
+ omar:{name:'Omar Aziz',handle:'omaraziz',initials:'OA',bg:'#1e3a3a',bio:'Desert runs and rooftop shisha.',followers:1890,following:441},
+ priya:{name:'Priya Nair',handle:'priyan',initials:'PN',bg:'#3a2a1e',bio:'Supper clubs and spice routes.',followers:2670,following:312},
+ finn:{name:'Finn O’Brien',handle:'finnob',initials:'FO',bg:'#26301e',bio:'Trad sessions, sea swims, pints.',followers:712,following:389},
+ zara:{name:'Zara Malik',handle:'zaramalik',initials:'ZM',bg:'#301e30',premium:true,bio:'Curator. If it’s beautiful, I’ll find it.',followers:'9.4k',following:158}
+};
+var FRIEND_KEYS=['maya','jules','ravi','dee','noor','sam','theo','ines','kenji','lucia','omar','priya','finn','zara'];
+function isVerified(key){if(key==='ava')return !!state.premium;return !!(USERS[key]&&USERS[key].premium);}
+Object.keys(USERS).forEach(function(k,i){USERS[k].photo=photoUrl(PORTRAITS[i%PORTRAITS.length],240);});
+
+/* ---------- countries + cities ---------- */
+var COUNTRIES=[
+ {name:'United States',code:'US',cities:['San Francisco','New York','Los Angeles','Chicago','Miami','Austin','Seattle','New Orleans']},
+ {name:'United Kingdom',code:'GB',cities:['London','Manchester','Edinburgh','Bristol','Brighton','Glasgow','Leeds']},
+ {name:'France',code:'FR',cities:['Paris','Lyon','Marseille','Bordeaux','Nice','Toulouse']},
+ {name:'Japan',code:'JP',cities:['Tokyo','Osaka','Kyoto','Fukuoka','Sapporo','Nagoya']},
+ {name:'United Arab Emirates',code:'AE',cities:['Dubai','Abu Dhabi','Sharjah']},
+ {name:'Germany',code:'DE',cities:['Berlin','Munich','Hamburg','Cologne','Frankfurt']},
+ {name:'Spain',code:'ES',cities:['Madrid','Barcelona','Valencia','Seville','Bilbao']},
+ {name:'Italy',code:'IT',cities:['Rome','Milan','Florence','Naples','Turin','Bologna']},
+ {name:'Netherlands',code:'NL',cities:['Amsterdam','Rotterdam','Utrecht','The Hague']},
+ {name:'Australia',code:'AU',cities:['Sydney','Melbourne','Brisbane','Perth','Adelaide']},
+ {name:'Canada',code:'CA',cities:['Toronto','Vancouver','Montreal','Calgary','Ottawa']},
+ {name:'Singapore',code:'SG',cities:['Singapore']},
+ {name:'Mexico',code:'MX',cities:['Mexico City','Guadalajara','Tulum','Monterrey']},
+ {name:'Brazil',code:'BR',cities:['Sao Paulo','Rio de Janeiro','Salvador','Brasilia']},
+ {name:'Ireland',code:'IE',cities:['Dublin','Cork','Galway']},
+ {name:'Portugal',code:'PT',cities:['Lisbon','Porto','Faro']},
+ {name:'Sweden',code:'SE',cities:['Stockholm','Gothenburg','Malmo']},
+ {name:'Denmark',code:'DK',cities:['Copenhagen','Aarhus']},
+ {name:'Norway',code:'NO',cities:['Oslo','Bergen']},
+ {name:'Switzerland',code:'CH',cities:['Zurich','Geneva','Basel']},
+ {name:'Austria',code:'AT',cities:['Vienna','Salzburg','Graz']},
+ {name:'Belgium',code:'BE',cities:['Brussels','Antwerp','Ghent']},
+ {name:'Greece',code:'GR',cities:['Athens','Thessaloniki','Mykonos']},
+ {name:'Turkey',code:'TR',cities:['Istanbul','Izmir','Antalya']},
+ {name:'India',code:'IN',cities:['Mumbai','Delhi','Bangalore','Goa','Jaipur']},
+ {name:'Thailand',code:'TH',cities:['Bangkok','Chiang Mai','Phuket']},
+ {name:'Indonesia',code:'ID',cities:['Bali','Jakarta','Yogyakarta']},
+ {name:'South Korea',code:'KR',cities:['Seoul','Busan','Jeju']},
+ {name:'Hong Kong',code:'HK',cities:['Hong Kong']},
+ {name:'China',code:'CN',cities:['Shanghai','Beijing','Chengdu']},
+ {name:'South Africa',code:'ZA',cities:['Cape Town','Johannesburg','Durban']},
+ {name:'Morocco',code:'MA',cities:['Marrakech','Casablanca','Tangier']},
+ {name:'Egypt',code:'EG',cities:['Cairo','Alexandria']},
+ {name:'Argentina',code:'AR',cities:['Buenos Aires','Cordoba','Mendoza']},
+ {name:'Chile',code:'CL',cities:['Santiago','Valparaiso']},
+ {name:'Colombia',code:'CO',cities:['Bogota','Medellin','Cartagena']},
+ {name:'New Zealand',code:'NZ',cities:['Auckland','Wellington','Queenstown']},
+ {name:'Poland',code:'PL',cities:['Warsaw','Krakow','Wroclaw']},
+ {name:'Czechia',code:'CZ',cities:['Prague','Brno']},
+ {name:'Iceland',code:'IS',cities:['Reykjavik']}
+];
+var CITY2COUNTRY={};COUNTRIES.forEach(function(co){co.cities.forEach(function(ci){if(CITY2COUNTRY[ci]==null)CITY2COUNTRY[ci]=co.name;});});
+
+/* ---------- category templates ---------- */
+var GEN=[
+ {cat:'Fitness',hosts:['Ridgeline Run Club','Forge Strength','Vertex Climbing','Tide Swimmers'],titles:['Sunrise {C} Run · 5K','Open-Gym HIIT','Night Climb','Waterfront Bootcamp'],venues:['Riverside Path','The Forge','North Wall','The Boardwalk'],about:'A social session with pace groups so nobody trains alone, and coffee at the finish. All levels, no drop.',price:'lowfree'},
+ {cat:'Nightlife',hosts:['Substrata Collective','After Hours','Basement Union'],titles:['Warehouse Sessions','All-Vinyl Disco','Rooftop After Dark'],venues:['The Depot','Pier Warehouse','Skyline Roof'],about:'One raw room, a big system and a rotating cast of local selectors until late. 21+, ID at the door.',price:'mid'},
+ {cat:'Music',hosts:['Nightbloom Records','The Assembly','Longplayer'],titles:['Live: Neo-Soul','Courtyard Jazz','Strings & Synths'],venues:['Great Hall','The Courtyard','Corner Stage'],about:'A live set with a rotating cast of guest players, warm horns and a late jam once the band settles in.',price:'midfree'},
+ {cat:'Wellness',hosts:['The Assembly','Still House'],titles:['Sunrise Rooftop Yoga','Sound Bath & Breathwork'],venues:['The Rooftop','The Studio'],about:'A slow, all-levels practice as the city wakes up. Mats and bolsters provided if you travel light.',price:'lowfree'},
+ {cat:'Food',hosts:['Mira Okafor','Long Table','Cellar Society'],titles:['Third Culture Supper','Natural Wine Crawl','Chef’s Table'],venues:['The Kitchen','Bar Part-Time','The Cellar'],about:'A communal table tracing one chef’s memory across a few courses, paired with low-intervention wines.',price:'high'},
+ {cat:'Art',hosts:['Grain Society','Atelier North'],titles:['Analog Film Photo Walk','Life Drawing Social'],venues:['The Park','Studio 9'],about:'A guided two hours with a small group. Bring what you have; we cover the rest and where to develop.',price:'low'},
+ {cat:'Sports',hosts:['Crocker Courts','City League'],titles:['Five-a-Side Night League','Padel Social'],venues:['The Courts','Court 3'],about:'Casual, competitive and under the lights. Solo players welcome, we balance the teams before kickoff.',price:'low'},
+ {cat:'Talks',hosts:['Civic Hall','Frontiers'],titles:['Founders & Frontiers','Design in the Open'],venues:['The Hall','Main Room'],about:'Operators who scaled hard things share what broke and what they’d do again. Q&A, then drinks.',price:'midfree'},
+ {cat:'Comedy',hosts:['Laugh Cellar','The Late Set'],titles:['Late Set · New Material','Stand-up Social'],venues:['The Cellar','Back Room'],about:'A tight late set with a surprise headliner working new bits. Two-item minimum, front rows are fair game.',price:'low'},
+ {cat:'Markets',hosts:['Grain Society','Makers Union'],titles:['Twilight Makers Market','Sunday Flea'],venues:['The Plaza','Union Yard'],about:'Independent makers, small-batch food and live music as the sun drops. Free entry, bring a tote.',price:'free'},
+ {cat:'Film',hosts:['Civic Hall','Reel Society'],titles:['Rooftop Cinema · Cult Classics','Open-Air Shorts'],venues:['The Roof','The Lawn'],about:'A film under the stars with wireless headphones and deck chairs. Doors early, film at dusk — bring a layer.',price:'low'},
+ {cat:'Theatre',hosts:['Blackbox Company','Stage Left'],titles:['Immersive: One Room','New Writing Night'],venues:['The Blackbox','Studio Stage'],about:'A small, immersive piece performed close enough to touch. Numbers are limited and doors close on time.',price:'mid'},
+ {cat:'Workshops',hosts:['The Makery','Craft Union'],titles:['Ceramics: Wheel Basics','Cocktail Masterclass'],venues:['The Workshop','The Bar Lab'],about:'A hands-on two hours with all materials included and something to take home. No experience needed.',price:'mid'},
+ {cat:'Outdoors',hosts:['Trailheads','Open Water'],titles:['Coastal Trail Hike','Golden-Hour Kayak'],venues:['Trailhead','The Marina'],about:'A guided outing at the best light of the day, gear provided, small group and an easy pace throughout.',price:'lowfree'},
+ {cat:'Community',hosts:['Neighbours','Common Ground'],titles:['Language Exchange','Sunday Volunteer Day'],venues:['Community Hall','The Green'],about:'A friendly, all-welcome gathering to meet people nearby. Come alone, leave with a few new numbers.',price:'free'}
+];
+var HOSTBG=['#3a2540','#1f3a2e','#402a1c','#1e2a40','#1e3540','#2f3a1e','#402038','#45301a','#2a2540','#301e30'];
+var STREETS=['Harbour St','Mill Lane','Old Market','Garden Row','Dock Rd','Rue Verte','5th & Main','Canal St','Prospect Ave','High St','Market Sq'];
+var WHENS=[
+ {when:'Tonight · 9:00 PM',dl:'Fri, Aug 8',ds:'Fri Aug 8',tr:'9:00 PM – late'},
+ {when:'Tomorrow · 7:00 AM',dl:'Sat, Aug 9',ds:'Sat Aug 9',tr:'7:00 – 8:30 AM'},
+ {when:'Sat · 8:00 PM',dl:'Sat, Aug 9',ds:'Sat Aug 9',tr:'8:00 – 11:00 PM'},
+ {when:'Sun · 4:00 PM',dl:'Sun, Aug 10',ds:'Sun Aug 10',tr:'4:00 – 7:00 PM'},
+ {when:'Wed · 6:30 PM',dl:'Wed, Aug 13',ds:'Wed Aug 13',tr:'6:30 – 8:30 PM'},
+ {when:'Thu · 8:00 PM',dl:'Thu, Aug 14',ds:'Thu Aug 14',tr:'8:00 – 9:30 PM'},
+ {when:'Fri · 7:30 PM',dl:'Fri, Aug 15',ds:'Fri Aug 15',tr:'7:30 – 10:30 PM'}
+];
+function tiersFor(mode,r){
+ if(mode==='free')return[{name:'RSVP',desc:'Free entry',price:0}];
+ if(mode==='lowfree')return r()<.5?[{name:'RSVP',desc:'Free · all levels',price:0}]:[{name:'Drop-in',desc:'One session',price:[12,15,18,22][Math.floor(r()*4)]}];
+ if(mode==='midfree')return r()<.5?[{name:'General',desc:'Free · seats limited',price:0},{name:'Supporter',desc:'Reserved seating',price:12}]:[{name:'General',desc:'Standing room',price:[24,28,30][Math.floor(r()*3)]}];
+ if(mode==='low')return[{name:'General',desc:'Standard entry',price:[12,15,16,18][Math.floor(r()*4)]}];
+ if(mode==='mid')return[{name:'Advance',desc:'Before doors',price:[20,22,25][Math.floor(r()*3)]},{name:'Door',desc:'Entry all night',price:[25,28,32][Math.floor(r()*3)]}];
+ return[{name:'Communal Seat',desc:'Multi-course + pairing',price:[55,65,75][Math.floor(r()*3)]},{name:'Chef’s Counter',desc:'Front row + extras',price:[85,95,110][Math.floor(r()*3)]}];
+}
+var GEN_ID=1000;
+function mkEvent(spec,city,country,r,premium){
+ var host=pick(r,spec.hosts),cshort=city.split(' ')[0],tw=pick(r,WHENS),tiers=tiersFor(spec.price,r);
+ var nf=[0,0,1,1,2,3,4][Math.floor(r()*7)],fr=FRIEND_KEYS.slice().sort(function(){return r()-.5;}).slice(0,nf);
+ return {id:GEN_ID++,city:city,country:country,cat:spec.cat,title:pick(r,spec.titles).replace('{C}',cshort),
+  host:host,hostInit:initialsOf(host),hostBg:pick(r,HOSTBG),hostEvents:8+Math.floor(r()*140),
+  bg:'#141215',when:tw.when,dateLong:tw.dl,dateShort:tw.ds,timeRange:tw.tr,
+  venue:pick(r,spec.venues),address:pick(r,STREETS)+' · '+city,dist:Math.round((r()*4+.4)*10)/10,
+  going:24+Math.floor(r()*380),friends:fr,about:spec.about,premium:!!premium,tiers:tiers};
+}
+function genCity(city,country){
+ var r=rng(hashStr(city+'|'+country)),list=[],order=GEN.slice().sort(function(){return r()-.5;});
+ order.forEach(function(spec){list.push(mkEvent(spec,city,country,r,r()<.14));});
+ ['Nightlife','Fitness','Music','Food','Comedy'].forEach(function(c){var s=null;for(var i=0;i<GEN.length;i++)if(GEN[i].cat===c)s=GEN[i];if(s)list.push(mkEvent(s,city,country,r,r()<.12));});
+ return list;
+}
+
+/* extra category glyphs */
+RAW.note='<path d="M9 17V6l10-2v11"/><circle cx="6.5" cy="17" r="2.5"/><circle cx="16.5" cy="15" r="2.5"/>';
+RAW.leaf='<path d="M4.5 19.5C4.5 10 11.5 4.5 19.5 4.5c0 9.5-7 15-15 15z"/><path d="M4.5 19.5C8 14 11.5 11.5 17 6.5"/>';
+RAW.wine='<path d="M8 4h8l-.7 5a3.3 3.3 0 0 1-6.6 0zM12 12.5V19M8.5 19.5h7"/>';
+RAW.palette='<path d="M12 3.5a8.5 8.5 0 1 0 0 17c1.4 0 2.2-1 2.2-2.1s-.7-1.6-.7-2.4c0-.9.7-1.5 1.6-1.5H17a4 4 0 0 0 4-4c0-3.9-4-6.5-9-6.5z"/><circle cx="8" cy="11" r="1.1"/><circle cx="12" cy="8" r="1.1"/><circle cx="16" cy="10" r="1.1"/>';
+RAW.ball='<circle cx="12" cy="12" r="8.4"/><path d="M12 3.6c2.2 2.6 2.2 14.2 0 16.8M3.7 11.4c3 1.6 14.3 1.6 16.6 0M6 5.5c2.6 2 9.4 2 12 0M6 18.5c2.6-2 9.4-2 12 0"/>';
+RAW.mic='<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v3.5M9 20.5h6"/>';
+RAW.mask='<path d="M4.5 6h15v4.5a7.5 7.5 0 0 1-15 0z"/><path d="M9 10h.01M15 10h.01M9.5 13.5a4 4 0 0 0 5 0"/>';
+RAW.tent='<path d="M12 4 3.5 20h17zM12 4v16"/>';
+RAW.clapper='<rect x="3.5" y="9" width="17" height="11" rx="2"/><path d="M3.8 9l1.7-3.6 3.9 1 1.4-3 3.9 1 1.4-3 3.9 1-1 3.6"/>';
+RAW.tools='<path d="M14.7 5.6a3.4 3.4 0 0 1 3.9 3.9L9.5 18.6l-4 1 1-4z"/><path d="M4.5 19.5l3-3"/>';
+RAW.mountain='<path d="M3 19l6-9 4 6 2.5-3.5L22 19z"/><circle cx="17" cy="6.5" r="2"/>';
+RAW.bag='<path d="M6 8h12l-1 11.5a1 1 0 0 1-1 .9H8a1 1 0 0 1-1-.9z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>';
+
+var CATS=[
+ {key:'Fitness',label:'Fitness',icon:'bolt'},{key:'Nightlife',label:'Nightlife',icon:'sparkle'},
+ {key:'Music',label:'Music',icon:'note'},{key:'Wellness',label:'Wellness',icon:'leaf'},
+ {key:'Food',label:'Food & Drink',icon:'wine'},{key:'Art',label:'Arts',icon:'palette'},
+ {key:'Sports',label:'Sports',icon:'ball'},{key:'Talks',label:'Talks',icon:'mic'},
+ {key:'Comedy',label:'Comedy',icon:'mask'},{key:'Markets',label:'Markets',icon:'bag'},
+ {key:'Film',label:'Film',icon:'clapper'},{key:'Theatre',label:'Theatre',icon:'star'},
+ {key:'Workshops',label:'Workshops',icon:'tools'},{key:'Outdoors',label:'Outdoors',icon:'mountain'},
+ {key:'Community',label:'Community',icon:'users'}
+];
+function catLabel(k){for(var i=0;i<CATS.length;i++)if(CATS[i].key===k)return CATS[i].label;return k;}
+function catIcon(k){for(var i=0;i<CATS.length;i++)if(CATS[i].key===k)return CATS[i].icon;return 'sparkle';}
+
+/* ---------- San Francisco catalogue ---------- */
+var EV_BY_ID={};
+var SF=[
+ {id:1,city:'San Francisco',cat:'Nightlife',title:'Warehouse Sessions Vol. 9',host:'Substrata Collective',hostInit:'SC',hostBg:'#3a2540',hostEvents:24,bg:'#141215',when:'Tonight · 9:00 PM',dateLong:'Fri, Aug 8',dateShort:'Fri Aug 8',timeRange:'9:00 PM – 3:00 AM',venue:'Pier 70',address:'420 22nd St, Dogpatch',dist:1.2,going:214,friends:['maya','jules','ravi'],premium:false,about:'Four rooms, one raw industrial shell on the waterfront. House and techno until sunrise with a rotating cast of local selectors. 21+, ID at the door.',tiers:[{name:'General Admission',desc:'Entry after 9pm',price:25},{name:'Early + Drink',desc:'Entry + house cocktail',price:38},{name:'VIP Table',desc:'Reserved table for four',price:120}]},
+ {id:2,city:'San Francisco',cat:'Wellness',title:'Sunrise Rooftop Yoga',host:'The Assembly',hostInit:'TA',hostBg:'#1f3a2e',hostEvents:58,bg:'#141215',when:'Sat · 7:00 AM',dateLong:'Sat, Aug 9',dateShort:'Sat Aug 9',timeRange:'7:00 – 8:15 AM',venue:'The Assembly Rooftop',address:'150 Valencia St',dist:0.6,going:42,friends:['dee'],premium:false,about:'Start the weekend above the fog with a slow vinyasa flow as the city wakes up. All levels welcome. Mats provided.',tiers:[{name:'RSVP',desc:'Free · bring a mat',price:0}]},
+ {id:3,city:'San Francisco',cat:'Food',title:'Third Culture Supper Club',host:'Mira Okafor',hostInit:'MO',hostBg:'#402a1c',hostEvents:11,bg:'#141215',when:'Sat · 7:30 PM',dateLong:'Sat, Aug 9',dateShort:'Sat Aug 9',timeRange:'7:30 – 10:30 PM',venue:'Mission Kitchen',address:'2820 Mission St',dist:2.1,going:28,friends:['priya'],premium:true,about:'A five-course communal dinner tracing one chef’s diasporic memory across three continents, paired with natural wines. One long table.',tiers:[{name:'Communal Seat',desc:'5 courses + wine pairing',price:65},{name:'Chef’s Counter',desc:'Front-row + two extra courses',price:95}]},
+ {id:4,city:'San Francisco',cat:'Talks',title:'Founders & Frontiers Talk',host:'Civic Hall SF',hostInit:'CH',hostBg:'#1e2a40',hostEvents:132,bg:'#141215',when:'Wed · 6:00 PM',dateLong:'Wed, Aug 13',dateShort:'Wed Aug 13',timeRange:'6:00 – 8:00 PM',venue:'Civic Hall',address:'135 Mission St',dist:0.9,going:130,friends:['noor','sam','maya','jules','dee'],premium:false,about:'Three operators who scaled hard things share what broke and what they’d do differently. Moderated Q&A, then drinks.',tiers:[{name:'General',desc:'Free · seats limited',price:0},{name:'Supporter',desc:'Reserved front seating',price:10}]},
+ {id:5,city:'San Francisco',cat:'Art',title:'Analog Film Photo Walk',host:'Grain Society',hostInit:'GS',hostBg:'#1e3540',hostEvents:19,bg:'#141215',when:'Sun · 10:00 AM',dateLong:'Sun, Aug 10',dateShort:'Sun Aug 10',timeRange:'10:00 AM – 12:00 PM',venue:'Dolores Park',address:'19th & Dolores St',dist:1.8,going:36,friends:['ravi','dee'],premium:false,about:'A guided two-hour walk shooting 35mm around the Mission. Bring any film camera; we cover metering and composition.',tiers:[{name:'Photo Walk',desc:'2 hrs · film not included',price:15}]},
+ {id:6,city:'San Francisco',cat:'Sports',title:'Five-a-Side Night League',host:'Crocker Courts',hostInit:'CC',hostBg:'#2f3a1e',hostEvents:76,bg:'#141215',when:'Thu · 8:00 PM',dateLong:'Thu, Aug 14',dateShort:'Thu Aug 14',timeRange:'8:00 – 9:30 PM',venue:'Crocker Courts',address:'260 Bush St',dist:1.1,going:60,friends:['ravi','dee','sam','noor'],premium:false,about:'Casual, competitive five-a-side under the lights. Solo players welcome, we balance the teams. No metal studs.',tiers:[{name:'Player Spot',desc:'Per player · 90 mins',price:12}]},
+ {id:7,city:'San Francisco',cat:'Fitness',title:'Sunrise Bridge Run · 5K',host:'Ridgeline Run Club',hostInit:'RR',hostBg:'#4a2f16',hostEvents:64,bg:'#141215',when:'Sat · 6:45 AM',dateLong:'Sat, Aug 9',dateShort:'Sat Aug 9',timeRange:'6:45 – 8:00 AM',venue:'Crissy Field',address:'1199 East Beach',dist:2.4,going:88,friends:['jules','dee'],premium:false,about:'A social 5K along the waterfront to the bridge and back, three pace groups so nobody runs alone. Coffee at the finish.',tiers:[{name:'RSVP',desc:'Free · all paces',price:0},{name:'Club Kit',desc:'RSVP + technical tee',price:28}]},
+ {id:8,city:'San Francisco',cat:'Fitness',title:'Forge Strength: Open-Gym HIIT',host:'Forge Strength',hostInit:'FS',hostBg:'#402a1c',hostEvents:41,bg:'#141215',when:'Mon · 6:30 PM',dateLong:'Mon, Aug 11',dateShort:'Mon Aug 11',timeRange:'6:30 – 7:30 PM',venue:'Forge SoMa',address:'88 Bluxome St',dist:0.8,going:40,friends:['sam'],premium:false,about:'A coached 60-minute HIIT circuit—kettlebells, rowers, sleds. Scalable for every level, chalk and water provided.',tiers:[{name:'Drop-in',desc:'One session',price:18},{name:'Class + Recovery',desc:'Session + sauna',price:30}]},
+ {id:9,city:'San Francisco',cat:'Outdoors',title:'Lands End Coastal Hike',host:'Trailheads',hostInit:'TH',hostBg:'#1e3540',hostEvents:52,bg:'#141215',when:'Sun · 9:00 AM',dateLong:'Sun, Aug 10',dateShort:'Sun Aug 10',timeRange:'9:00 – 11:30 AM',venue:'Lands End Trailhead',address:'680 Point Lobos Ave',dist:3.0,going:33,friends:['ravi','finn'],premium:false,about:'A guided coastal hike at golden hour with ocean views the whole way. Easy pace, small group, water provided.',tiers:[{name:'RSVP',desc:'Free · all levels',price:0}]},
+ {id:10,city:'San Francisco',cat:'Nightlife',title:'Basement Disco: All Vinyl',host:'Nightbloom Records',hostInit:'NB',hostBg:'#3a1f42',hostEvents:37,bg:'#141215',when:'Sat · 10:00 PM',dateLong:'Sat, Aug 9',dateShort:'Sat Aug 9',timeRange:'10:00 PM – 2:00 AM',venue:'The Cellar',address:'715 Harrison St',dist:1.4,going:120,friends:['maya','sam','kenji'],premium:false,about:'Strictly wax—disco, boogie and Italo across two turntables and a wall of records. Low ceiling, big system.',tiers:[{name:'Advance',desc:'Entry before midnight',price:20},{name:'Door',desc:'Entry all night',price:25}]},
+ {id:11,city:'San Francisco',cat:'Music',title:'Nightbloom Live: Neo-Soul',host:'Nightbloom Records',hostInit:'NB',hostBg:'#3a1f42',hostEvents:37,bg:'#141215',when:'Sun · 8:00 PM',dateLong:'Sun, Aug 10',dateShort:'Sun Aug 10',timeRange:'8:00 – 11:00 PM',venue:'Great Star Hall',address:'636 Jackson St',dist:1.6,going:96,friends:['maya','jules','ravi'],premium:false,about:'A live neo-soul quartet with guest vocalists, warm horns and a late-set jam. Seated early, standing once it hits.',tiers:[{name:'General',desc:'Standing room',price:28},{name:'Reserved',desc:'Seated · first two rows',price:48}]},
+ {id:12,city:'San Francisco',cat:'Music',title:'Courtyard Jazz Sundays',host:'The Assembly',hostInit:'TA',hostBg:'#1f3a2e',hostEvents:58,bg:'#141215',when:'Sun · 4:00 PM',dateLong:'Sun, Aug 10',dateShort:'Sun Aug 10',timeRange:'4:00 – 7:00 PM',venue:'The Assembly Courtyard',address:'150 Valencia St',dist:0.6,going:54,friends:['dee'],premium:false,about:'An easy afternoon of live trio jazz in the open courtyard, natural wine and small plates. Family and dog friendly.',tiers:[{name:'RSVP',desc:'Free entry',price:0},{name:'Reserved Table',desc:'Table for two + first round',price:35}]},
+ {id:13,city:'San Francisco',cat:'Wellness',title:'Sound Bath & Breathwork',host:'The Assembly',hostInit:'TA',hostBg:'#1f3a2e',hostEvents:58,bg:'#141215',when:'Wed · 7:30 PM',dateLong:'Wed, Aug 13',dateShort:'Wed Aug 13',timeRange:'7:30 – 8:45 PM',venue:'The Assembly Studio',address:'150 Valencia St',dist:0.6,going:30,friends:[],premium:false,about:'Seventy-five minutes of guided breathwork settling into a crystal-bowl sound bath. Bolsters and blankets provided.',tiers:[{name:'Mat Space',desc:'Bolster + blanket',price:24}]},
+ {id:14,city:'San Francisco',cat:'Food',title:'Natural Wine Crawl',host:'Mira Okafor',hostInit:'MO',hostBg:'#402a1c',hostEvents:11,bg:'#141215',when:'Fri · 6:30 PM',dateLong:'Fri, Aug 15',dateShort:'Fri Aug 15',timeRange:'6:30 – 9:30 PM',venue:'Starts at Bar Part Time',address:'496 14th St',dist:1.9,going:47,friends:['maya','noor','ines'],premium:false,about:'Three low-intervention wine bars, a host-poured flight at each and snacks along the way. Small group, walkable route.',tiers:[{name:'Crawl Ticket',desc:'3 flights + snacks',price:45}]},
+ {id:15,city:'San Francisco',cat:'Comedy',title:'Laugh Cellar: Late Set',host:'Laugh Cellar',hostInit:'LC',hostBg:'#463618',hostEvents:88,bg:'#141215',when:'Sat · 9:30 PM',dateLong:'Sat, Aug 9',dateShort:'Sat Aug 9',timeRange:'9:30 – 11:00 PM',venue:'The Laugh Cellar',address:'50 Mason St',dist:1.0,going:72,friends:['sam','noor'],premium:false,about:'Six comics, one tight late set and a surprise headliner working new material. Two-item minimum, front rows are fair game.',tiers:[{name:'General',desc:'Open seating',price:18},{name:'Front Row',desc:'Reserved · closest tables',price:32}]},
+ {id:16,city:'San Francisco',cat:'Markets',title:'Twilight Makers Market',host:'Grain Society',hostInit:'GS',hostBg:'#1e3540',hostEvents:19,bg:'#141215',when:'Sun · 3:00 PM',dateLong:'Sun, Aug 10',dateShort:'Sun Aug 10',timeRange:'3:00 – 8:00 PM',venue:'Thrive City Plaza',address:'1 Warriors Way',dist:2.6,going:210,friends:['zara'],premium:false,about:'Forty independent makers—ceramics, print, jewellery, small-batch food—with live music as the sun drops. Free entry.',tiers:[{name:'Free Entry',desc:'Come and go all evening',price:0}]},
+ {id:17,city:'San Francisco',cat:'Film',title:'Rooftop Cinema: Cult Classics',host:'Civic Hall SF',hostInit:'CH',hostBg:'#1e2a40',hostEvents:132,bg:'#141215',when:'Fri · 8:30 PM',dateLong:'Fri, Aug 15',dateShort:'Fri Aug 15',timeRange:'8:30 – 11:00 PM',venue:'Civic Hall Roof',address:'135 Mission St',dist:0.9,going:140,friends:['jules','dee','maya'],premium:true,about:'A cult classic under the stars with wireless headphones, deck chairs and a small bar. Bring a jacket, it gets breezy.',tiers:[{name:'Deck Chair',desc:'Seat + headphones',price:16},{name:'Sofa for Two',desc:'Shared sofa + blanket',price:38}]},
+ {id:18,city:'San Francisco',cat:'Nightlife',title:'Members’ Rooftop Table',host:'Event House',hostInit:'EH',hostBg:'#402038',hostEvents:9,bg:'#141215',when:'Sat · 8:00 PM',dateLong:'Sat, Aug 9',dateShort:'Sat Aug 9',timeRange:'8:00 – late',venue:'The Terrace',address:'Members only · SoMa',dist:1.0,going:36,friends:['theo','ines','zara'],premium:true,about:'A members-only rooftop table with a welcome pour, a resident selector and the city skyline. Verified members only.',tiers:[{name:'Member Seat',desc:'Welcome pour included',price:0}]}
+];
+SF.forEach(function(e){var pr=e.tiers.map(function(t){return t.price;});e.minPrice=Math.min.apply(null,pr);e.priceLabel=e.minPrice===0?'Free':money(e.minPrice);EV_BY_ID[e.id]=e;});
+var GEN_CACHE={'San Francisco':SF};
+function eventsForCity(city){if(GEN_CACHE[city])return GEN_CACHE[city];var co=CITY2COUNTRY[city]||'';var list=genCity(city,co);list.forEach(function(e){var pr=e.tiers.map(function(t){return t.price;});e.minPrice=Math.min.apply(null,pr);e.priceLabel=e.minPrice===0?'Free':money(e.minPrice);EV_BY_ID[e.id]=e;});GEN_CACHE[city]=list;return list;}
+function byId(id){return EV_BY_ID[id]||SF[0];}
+
+var POSTS=[
+ {id:'p1',author:'maya',ago:'2h',text:'that warehouse set last night is still ringing in my ears. four rooms, zero phones, all gas.',photo:'cov:Nightlife',likes:212,replies:14,eventId:1},
+ {id:'p2',author:'theo',ago:'5h',text:'morning run by the bridge, oat flat white, nothing else on the calendar. this is the weekend.',photo:null,likes:531,replies:33,eventId:7},
+ {id:'p3',author:'ines',ago:'1d',text:'wine crawl report: bar three had a pet-nat that ruined me for supermarket rose forever.',photo:'cov:Food',likes:98,replies:7,eventId:14},
+ {id:'p4',author:'jules',ago:'1d',text:'neo-soul quartet plus a surprise vocalist. goosebumps. Nightbloom never misses.',photo:null,likes:140,replies:9,eventId:11},
+ {id:'p5',author:'kenji',ago:'2d',text:'all-vinyl basement, low ceiling, big system. exactly how it should be done.',photo:'cov:Nightlife',likes:203,replies:12,eventId:10},
+ {id:'p6',author:'dee',ago:'2d',text:'sunrise yoga then negronis by six. balance is real and I have found it.',photo:'cov:Wellness',likes:76,replies:5,eventId:2},
+ {id:'p7',author:'zara',ago:'3d',text:'the makers market keeps getting better. came for ceramics, left with a print and a plant.',photo:'cov:Markets',likes:167,replies:8,eventId:16},
+ {id:'p8',author:'ava',ago:'3d',text:'saved six things for this weekend and I will attend exactly two of them, as tradition demands.',photo:null,likes:64,replies:11,eventId:null}
+];
+var CONVOS=[
+ {id:'c1',user:'maya',ago:'2m',unread:2,msgs:[{f:'them',t:'are you going to Warehouse Sessions tonight??',w:'9:02 PM'},{f:'them',t:'jules and I are at mine at 8 if you want to pregame',w:'9:02 PM'}]},
+ {id:'c2',user:'theo',ago:'1h',unread:0,msgs:[{f:'me',t:'that bridge run wrecked me in the best way',w:'8:10 AM'},{f:'them',t:'haha welcome to the club. same time next Saturday?',w:'8:12 AM'},{f:'me',t:'deal',w:'8:13 AM'}]},
+ {id:'c3',user:'ines',ago:'3h',unread:1,msgs:[{f:'them',t:'sending you the wine bar list from the crawl',w:'6:40 PM'},{f:'them',t:'bar three first, trust me',w:'6:41 PM'}]},
+ {id:'c4',user:'kenji',ago:'5h',unread:0,msgs:[{f:'them',t:'found a first-press of the record they closed with',w:'4:15 PM'},{f:'me',t:'no way. bring it Sunday',w:'4:20 PM'}]},
+ {id:'c5',user:'jules',ago:'Yesterday',unread:0,msgs:[{f:'them',t:'photo dump from the jazz courtyard incoming',w:'2:15 PM'},{f:'me',t:'yes please',w:'2:20 PM'}]},
+ {id:'c6',user:'lucia',ago:'Yesterday',unread:0,msgs:[{f:'them',t:'salsa social on thursday, you in?',w:'7:02 PM'}]},
+ {id:'c7',user:'dee',ago:'Mon',unread:0,msgs:[{f:'me',t:'yoga sat morning?',w:'9:00 AM'},{f:'them',t:'always. I’ll save you a mat',w:'9:05 AM'}]},
+ {id:'c8',user:'omar',ago:'Mon',unread:0,msgs:[{f:'them',t:'rooftop later this week? weather looks perfect',w:'5:30 PM'}]},
+ {id:'c9',user:'priya',ago:'Tue',unread:0,msgs:[{f:'them',t:'got us two seats at the supper club',w:'11:10 AM'},{f:'me',t:'you are a legend',w:'11:12 AM'}]},
+ {id:'c10',user:'sam',ago:'Wed',unread:0,msgs:[{f:'them',t:'five-a-side, we’re one short',w:'6:00 PM'},{f:'me',t:'on my way',w:'6:04 PM'}]},
+ {id:'c11',user:'zara',ago:'Wed',unread:0,msgs:[{f:'them',t:'members table saturday — got you on the list',w:'1:00 PM'}]}
+];
+function convoOf(key){for(var i=0;i<CONVOS.length;i++)if(CONVOS[i].user===key)return CONVOS[i];return null;}
+
+var NOTIFS=[
+ {ic:'userPlus',user:'kenji',text:'started following you',ago:'8m',unread:true,act:'user',key:'kenji'},
+ {ic:'heart',user:'maya',text:'liked your post',ago:'22m',unread:true,act:'nav',screen:'profile'},
+ {ic:'bell',eventId:1,text:'Warehouse Sessions starts in 3 hours — your RSVP is confirmed',ago:'1h',unread:true,act:'open',id:1},
+ {ic:'users',eventId:11,text:'Maya and 4 friends are going to Nightbloom Live',ago:'2h',unread:true,act:'open',id:11},
+ {ic:'chat',user:'ines',text:'sent you a message',ago:'3h',unread:false,act:'thread',key:'ines'},
+ {ic:'diamond',text:'A members-only event just dropped near you',ago:'5h',unread:false,act:'open',id:18},
+ {ic:'sparkle',user:'theo',text:'posted a new event you might like',ago:'6h',unread:false,act:'user',key:'theo'},
+ {ic:'ticket',eventId:7,text:'Price kept — Sunrise Bridge Run is still free to RSVP',ago:'9h',unread:false,act:'open',id:7},
+ {ic:'userPlus',user:'lucia',text:'started following you',ago:'1d',unread:false,act:'user',key:'lucia'},
+ {ic:'calCheck',eventId:4,text:'Reminder: Founders & Frontiers is on Wednesday',ago:'1d',unread:false,act:'open',id:4},
+ {ic:'heart',user:'jules',text:'and 11 others liked your post',ago:'1d',unread:false,act:'nav',screen:'profile'},
+ {ic:'shield',text:'Thanks — the report you filed was reviewed and actioned',ago:'2d',unread:false,act:'none'},
+ {ic:'users',eventId:16,text:'Zara saved Twilight Makers Market',ago:'2d',unread:false,act:'open',id:16},
+ {ic:'diamond',text:'Your City Concierge plan for the weekend is ready',ago:'3d',unread:false,act:'nav',screen:'premium'}
+];
+
+var state={
+ screen:'home',feed:'foryou',country:0,cityIdx:0,selectedId:1,_from:'home',
+ exploreCat:null,query:'',ticketType:0,qty:1,method:0,ticketTab:'upcoming',
+ saved:[7,3],followingHosts:{'Substrata Collective':true,'The Assembly':true,'Ridgeline Run Club':true},
+ followingUsers:{maya:true,theo:true,jules:true,kenji:true},blocked:{},muted:{},premium:false,privateAcct:false,
+ posts:[],myTickets:[],threadUser:null,profileUser:null,profileTab:'posts',
+ hostOpen:false,filterOpen:false,pickerOpen:false,moreOpen:false,moreCtx:null,reportOpen:false,reportCtx:null,composeOpen:false,composeText:'',draftPhoto:null,
+ create:{step:0,title:'',cat:'Nightlife',date:'',time:'',venue:'',city:'',paid:false,price:'',about:'',cover:'Nightlife'},publishedId:null,
+ notif:{a:true,b:true,c:false,d:true,e:false},sound:true,settingsKey:'',toast:'',_focusSearch:false,
+ whenIdx:0,priceIdx:0,sortIdx:0,dist:5
+};
+var wheel={country:0,city:0};
+function cityName(){return COUNTRIES[state.country].cities[state.cityIdx];}
+function cityShort(){return cityName();}
+function countryName(){return COUNTRIES[state.country].name;}
+function cityEvents(){return eventsForCity(cityName());}
+function sel(){return byId(state.selectedId);}
+function curTier(){var s=sel();return s.tiers[Math.min(state.ticketType,s.tiers.length-1)];}
+function followHostCount(){var n=0,k;for(k in state.followingHosts)if(state.followingHosts[k])n++;return n;}
+function followUserCount(){var n=0,k;for(k in state.followingUsers)if(state.followingUsers[k])n++;return n;}
+function unreadNotifs(){return NOTIFS.filter(function(n){return n.unread;}).length;}
+function unreadChats(){return CONVOS.reduce(function(a,c){return a+(c.unread&&!state.blocked[c.user]?1:0);},0);}
+function allPosts(){return state.posts.concat(POSTS).filter(function(p){return !state.blocked[p.author]&&!state.muted[p.author];});}
+
+/* ---------- components ---------- */
+function avatarEl(key,size){var u=USERS[key]||{initials:'?',bg:'#2a2430'};var fs=Math.round(size*0.38);
+ return '<span class="avatar press" data-act="user" data-key="'+key+'" style="width:'+size+'px;height:'+size+'px;background:'+u.bg+';font-size:'+fs+'px">'+u.initials+avPhoto(u)+'</span>';}
+function avatarPlain(key,size){var u=USERS[key]||{initials:'?',bg:'#2a2430'};var fs=Math.round(size*0.38);
+ return '<span class="avatar" style="width:'+size+'px;height:'+size+'px;background:'+u.bg+';font-size:'+fs+'px">'+u.initials+avPhoto(u)+'</span>';}
+function nameLine(key,px){var u=USERS[key];return '<span style="font-weight:600;font-size:'+(px||14)+'px;color:var(--bone)">'+u.name+'</span>'+(isVerified(key)?' '+vbadge(Math.round((px||14)*1.05)):'');}
+function stack(keys,size,border){return '<div style="display:flex">'+keys.map(function(k,i){var u=USERS[k];return '<span class="avatar" style="width:'+size+'px;height:'+size+'px;background:'+u.bg+';font-size:'+Math.round(size*0.36)+'px;border:2px solid '+(border||'var(--surface)')+';margin-left:'+(i?-Math.round(size*0.34):0)+'px">'+u.initials+avPhoto(u)+'</span>';}).join('')+'</div>';}
+function friendsGoing(ev){var f=ev.friends||[];if(!f.length)return '';var n=f.slice(0,2).map(function(k){return USERS[k].name.split(' ')[0];}).join(', ');return n+(f.length>2?' +'+(f.length-2):'');}
+function thumb(ev,s){return '<div style="position:relative;width:'+s+'px;height:'+s+'px;flex:none;border-radius:13px;overflow:hidden;background:#141215">'+cov(ev)+'</div>';}
+function shade(){return '<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,4,6,.15) 0%,transparent 34%,rgba(5,4,6,.9) 100%)"></div>';}
+
+function eventRow(ev){
+ return '<div class="press card" data-act="open" data-id="'+ev.id+'" style="display:flex;gap:13px;padding:10px;cursor:pointer;align-items:center">'+thumb(ev,72)
+ +'<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:7px;margin-bottom:2px"><span style="font-size:11.5px;font-weight:600;color:var(--ember)">'+ev.when+'</span>'+(ev.premium?'<span style="color:var(--gold)">'+ico('diamond',12,2)+'</span>':'')+'</div>'
+ +'<div style="font-weight:700;font-size:15px;line-height:1.2;color:var(--bone);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+ev.title+'</div>'
+ +'<div style="font-size:12px;color:var(--ash);margin-top:3px">'+ev.venue+' · '+ev.dist+' mi</div></div>'
+ +'<div style="align-self:center;font-weight:700;font-size:14px;color:var(--bone)">'+ev.priceLabel+'</div></div>';}
+
+function coverCard(ev,h,reason){var saved=state.saved.indexOf(ev.id)>-1;
+ return '<div class="press" data-act="open" data-id="'+ev.id+'" style="position:relative;border-radius:22px;overflow:hidden;height:'+h+'px;cursor:pointer;background:#141215">'+cov(ev)+shade()
+ +'<div style="position:absolute;top:13px;left:13px;right:13px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+ +(reason?'<div class="glass" style="border-radius:999px;padding:6px 12px;font-size:11.5px;font-weight:600;color:var(--bone);display:flex;align-items:center;gap:6px"><span style="color:var(--ember)">'+ico('sparkle',12,2)+'</span>'+reason+'</div>':(ev.premium?'<div class="glass" style="border-radius:999px;padding:6px 11px;color:var(--gold);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:5px">'+ico('diamond',11,2)+'Premium</div>':'<span></span>'))
+ +'<button class="press glass" data-act="save" data-id="'+ev.id+'" style="width:36px;height:36px;flex:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:var(--bone)">'+heartIco(saved,17)+'</button></div>'
+ +'<div style="position:absolute;left:16px;right:16px;bottom:15px">'
+ +'<div style="font-size:11.5px;color:var(--ember);font-weight:600;margin-bottom:5px">'+ev.when+'</div>'
+ +'<div style="font-weight:700;font-size:'+(h>320?26:20)+'px;line-height:1.08;letter-spacing:-.02em;color:var(--bone);margin-bottom:'+(h>320?13:9)+'px">'+ev.title+'</div>'
+ +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px">'
+ +'<div style="display:flex;align-items:center;gap:8px">'+(ev.friends.length?stack(ev.friends.slice(0,3),26,'#0b0a0c'):'')
+ +'<span style="font-size:12px;color:var(--bone);opacity:.82">'+(ev.friends.length?friendsGoing(ev)+' going':ev.going+' going')+'</span></div>'
+ +'<div class="glass" style="border-radius:999px;padding:8px 15px;font-weight:700;font-size:13px;color:var(--bone)">'+ev.priceLabel+'</div></div></div></div>';}
+
+function wideCard(ev){var saved=state.saved.indexOf(ev.id)>-1;
+ return '<div class="press" data-act="open" data-id="'+ev.id+'" style="flex:none;width:220px;cursor:pointer">'
+ +'<div style="position:relative;height:150px;border-radius:18px;overflow:hidden;background:#141215">'+cov(ev)
+ +'<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(5,4,6,.82))"></div>'
+ +(ev.premium?'<div class="glass" style="position:absolute;top:9px;left:9px;border-radius:999px;padding:4px 9px;color:var(--gold);font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:4px">'+ico('diamond',10,2)+'Premium</div>':'')
+ +'<button class="press glass" data-act="save" data-id="'+ev.id+'" style="position:absolute;top:9px;right:9px;width:30px;height:30px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;color:var(--bone)">'+heartIco(saved,15)+'</button>'
+ +'<div style="position:absolute;left:12px;right:12px;bottom:11px"><div style="font-size:10.5px;color:var(--ember);font-weight:600;margin-bottom:3px">'+ev.when+'</div>'
+ +'<div style="font-weight:700;font-size:15.5px;line-height:1.14;color:var(--bone);letter-spacing:-.01em">'+ev.title+'</div></div></div>'
+ +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span style="font-size:12px;color:var(--ash)">'+ev.venue+'</span><span style="font-weight:700;font-size:13px;color:var(--bone)">'+ev.priceLabel+'</span></div></div>';}
+
+function strip(title,ids,sub){if(!ids.length)return '';
+ return '<div><div style="margin:0 0 12px;padding:0 2px"><div style="font-weight:700;font-size:18px;letter-spacing:-.02em;color:var(--bone)">'+title+'</div>'+(sub?'<div style="font-size:12px;color:var(--ash);margin-top:2px">'+sub+'</div>':'')+'</div>'
+ +'<div class="scroll" style="display:flex;gap:12px;overflow-x:auto;margin:0 -20px;padding:0 20px 4px">'+ids.map(function(id){return wideCard(byId(id));}).join('')+'</div></div>';}
+
+function mediaOf(photo,seed){if(!photo)return '';
+ if(/^data:|^blob:|^https?:/.test(photo))return '<img src="'+photo+'" alt="" style="width:100%;max-height:360px;object-fit:cover;display:block">';
+ if(photo.indexOf('cov:')===0){return '<div style="position:relative;width:100%;height:220px;background:#141215">'+cov({cat:photo.slice(4),id:(seed||7)})+'</div>';}
+ return '';}
+function postCard(p){var u=USERS[p.author];if(!u)return '';var mine=p.author==='ava';
+ return '<div class="card" style="padding:14px;overflow:hidden">'
+ +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">'+avatarEl(p.author,38)
+ +'<div style="flex:1;min-width:0;line-height:1.25"><div>'+nameLine(p.author,14)+'</div><div style="font-size:12px;color:var(--ash)">@'+u.handle+' · '+p.ago+'</div></div>'
+ +'<button class="press hicon" data-act="more" data-mtype="post" data-key="'+p.author+'" data-id="'+p.id+'" style="width:32px;height:32px;color:var(--ash)">'+ico('more',20)+'</button></div>'
+ +'<div style="font-size:14.5px;line-height:1.5;color:var(--bone);margin-bottom:12px">'+esc(p.text)+'</div>'
+ +(p.photo?'<div style="border-radius:16px;overflow:hidden;border:1px solid var(--line);margin-bottom:12px">'+mediaOf(p.photo,hashStr(p.id))+'</div>':'')
+ +(p.eventId?'<div class="press" data-act="open" data-id="'+p.eventId+'" style="display:flex;align-items:center;gap:9px;background:var(--surface2);border-radius:12px;padding:9px 11px;margin-bottom:12px;cursor:pointer">'+thumb(byId(p.eventId),34)+'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600;color:var(--bone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+byId(p.eventId).title+'</div><div style="font-size:11px;color:var(--ash)">'+byId(p.eventId).when+'</div></div><span style="color:var(--ash)">'+ico('chevR',15)+'</span></div>':'')
+ +'<div style="display:flex;align-items:center;gap:22px;color:var(--ash);font-size:12.5px;font-weight:600">'
+ +'<span style="display:flex;align-items:center;gap:6px">'+ico('chat',16)+' '+p.replies+'</span>'
+ +'<button class="press" data-act="likepost" data-id="'+p.id+'" style="background:none;border:none;color:var(--ash);cursor:pointer;display:flex;align-items:center;gap:6px;font-weight:600;font-size:12.5px;padding:0">'+heartIco(false,16)+' '+p.likes+'</button>'
+ +'<span style="display:flex;align-items:center;gap:6px;margin-left:auto">'+ico('share',15)+'</span></div></div>';}
+
+function miniRow(ev,clickable){return '<div '+(clickable?'class="press" data-act="open" data-id="'+ev.id+'"':'')+' style="display:flex;gap:12px;align-items:center;cursor:'+(clickable?'pointer':'default')+'">'+thumb(ev,60)
+ +'<div style="flex:1;min-width:0"><div style="font-size:11.5px;font-weight:600;color:var(--ember)">'+ev.when+'</div>'
+ +'<div style="font-weight:700;font-size:15px;line-height:1.2;color:var(--bone);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+ev.title+'</div>'
+ +'<div style="font-size:12px;color:var(--ash);margin-top:2px">'+ev.venue+' · '+ev.priceLabel+'</div></div>'
+ +(clickable?'<span style="flex:none;color:var(--ash)">'+ico('chevR',16)+'</span>':'')+'</div>';}
+function proofCard(ev){return '<div class="card" style="padding:13px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'+stack(ev.friends.slice(0,3),29,'var(--surface)')
+ +'<div style="font-size:13px;color:var(--bone);line-height:1.35"><b>'+friendsGoing(ev)+'</b> <span class="mut">'+(ev.friends.length>1?'are':'is')+' going</span></div></div>'+miniRow(ev,true)+'</div>';}
+function hostCard(ev,ago){var f=!!state.followingHosts[ev.host];
+ return '<div class="card" style="padding:13px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
+ +'<span class="avatar" style="width:38px;height:38px;background:'+ev.hostBg+';font-size:13px">'+ev.hostInit+'</span>'
+ +'<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:var(--bone)">'+ev.host+'</div><div style="font-size:11.5px;color:var(--ash)">new event · '+ago+'</div></div>'
+ +'<button class="press" data-act="followhost" data-host="'+esc(ev.host)+'" style="flex:none;border:'+(f?'none':'1.5px solid var(--bone)')+';background:'+(f?'var(--surface2)':'transparent')+';color:var(--bone);border-radius:999px;padding:7px 14px;font-weight:600;font-size:12.5px;cursor:pointer">'+(f?'Following':'Follow')+'</button></div>'
+ +'<div class="press" data-act="open" data-id="'+ev.id+'" style="position:relative;border-radius:15px;overflow:hidden;height:168px;cursor:pointer;background:#141215">'+cov(ev)+'<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 42%,rgba(5,4,6,.84))"></div>'
+ +'<div style="position:absolute;left:14px;right:14px;bottom:12px"><div style="font-size:11.5px;color:var(--ember);font-weight:600;margin-bottom:3px">'+ev.when+'</div><div style="font-weight:700;font-size:18px;line-height:1.12;color:var(--bone);letter-spacing:-.01em">'+ev.title+'</div></div></div></div>';}
+function friendCard(ev,who,action,ago){var u=USERS[who];
+ return '<div class="card press" data-act="open" data-id="'+ev.id+'" style="padding:12px;cursor:pointer"><div style="display:flex;align-items:center;gap:9px;margin-bottom:11px">'+avatarPlain(who,29)
+ +'<div style="font-size:12.5px;color:var(--ash)"><b style="color:var(--bone)">'+u.name.split(' ')[0]+'</b> '+action+' · '+ago+'</div></div>'+miniRow(ev,false)+'</div>';}
+function premiumFeedCard(ev){return '<div style="position:relative;border-radius:22px;overflow:hidden;border:1px solid rgba(201,168,106,.35)"><div class="press" data-act="open" data-id="'+ev.id+'" style="position:relative;height:230px;cursor:pointer;background:#141215">'+cov(ev)+'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,4,6,.25),transparent 30%,rgba(5,4,6,.9))"></div>'
+ +'<div style="position:absolute;top:13px;left:13px" class="prem-chip">'+ico('diamond',11,2)+' Premium event</div>'
+ +'<div style="position:absolute;left:16px;right:16px;bottom:15px"><div style="font-size:11.5px;color:var(--gold);font-weight:600;margin-bottom:4px">'+ev.when+'</div><div style="font-weight:700;font-size:21px;line-height:1.1;letter-spacing:-.02em;color:var(--bone);margin-bottom:10px">'+ev.title+'</div>'
+ +'<div class="press" style="display:inline-flex;align-items:center;gap:7px;background:var(--bone);color:#0B0A0C;border-radius:999px;padding:8px 15px;font-weight:600;font-size:12.5px">'+(state.premium?'Reserve your seat':'Unlock with Premium')+ico('chevR',14,2.2)+'</div></div></div></div>';}
+function recoBlock(ev,reason){return '<div><div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;padding:0 2px"><span style="color:var(--ember)">'+ico('sparkle',13,2)+'</span><span style="font-size:12.5px;color:var(--ash);font-weight:500">'+reason+'</span></div>'+coverCard(ev,210)+'</div>';}
+
+/* ---------- home feed ---------- */
+function heroReason(ev){if(state.followingHosts[ev.host])return 'From '+ev.host+', who you follow';if(ev.cat==='Nightlife')return 'Because you saved techno nights';return 'Recommended in '+cityShort();}
+function foryouFeed(){var ev=cityEvents();if(!ev.length)return [];
+ var byGoing=ev.slice().sort(function(a,b){return b.going-a.going;});
+ var wf=ev.filter(function(e){return e.friends.length&&!state.blocked[e.friends[0]];});
+ var hero=byGoing[0],b=[];
+ b.push({t:'hero',id:hero.id,reason:heroReason(hero)});
+ if(wf[0])b.push({t:'proof',id:wf[0].id});
+ b.push({t:'strip',title:'Trending in '+cityShort(),ids:byGoing.slice(1,7).map(function(e){return e.id;})});
+ var reco=ev[3%ev.length];b.push({t:'reco',id:reco.id,reason:'Popular in '+catLabel(reco.cat)});
+ var prem=null;for(var i=0;i<ev.length;i++)if(ev[i].premium){prem=ev[i];break;}if(prem)b.push({t:'premium',id:prem.id});
+ var hev=null;for(i=0;i<ev.length;i++)if(state.followingHosts[ev[i].host]){hev=ev[i];break;}b.push({t:'host',id:(hev||ev[1]).id,ago:'3h'});
+ var fp=allPosts().filter(function(p){return state.followingUsers[p.author];})[0];if(fp)b.push({t:'post',post:fp});
+ b.push({t:'collection',title:'Your evening, sorted',sub:'A short list near you',ids:ev.slice(0,6).map(function(e){return e.id;})});
+ if(wf[1])b.push({t:'proof',id:wf[1].id});
+ return b;}
+function followingFeed(){var ev=cityEvents(),hev=ev.filter(function(e){return state.followingHosts[e.host];}),b=[];
+ var posts=allPosts().filter(function(p){return state.followingUsers[p.author];});
+ if(hev[0])b.push({t:'host',id:hev[0].id,ago:'2h'});
+ if(posts[0])b.push({t:'post',post:posts[0]});
+ if(hev[1])b.push({t:'host',id:hev[1].id,ago:'5h'});
+ if(posts[1])b.push({t:'post',post:posts[1]});
+ var fe=null;for(var i=0;i<ev.length;i++)if(ev[i].friends.length&&!state.blocked[ev[i].friends[0]]){fe=ev[i];break;}
+ if(fe)b.push({t:'friend',id:fe.id,who:fe.friends[0],action:'is going to',ago:'8h'});
+ if(posts[2])b.push({t:'post',post:posts[2]});
+ if(!b.length)b.push({t:'empty'});
+ return b;}
+function buildFeed(){var m=state.feed;
+ if(m==='foryou')return foryouFeed();
+ if(m==='following')return followingFeed();
+ var ev=cityEvents();
+ if(m==='nearby'){ev=ev.slice().sort(function(a,b){return a.dist-b.dist;});return ev.slice(0,10).map(function(e){return {t:'reco',id:e.id,reason:e.dist+' mi · '+e.venue};});}
+ if(m==='public'){ev=ev.filter(function(e){return !e.premium;}).sort(function(a,b){return b.going-a.going;});return ev.slice(0,10).map(function(e){return {t:'reco',id:e.id,reason:'Open to everyone · '+e.going+' going'};});}
+ if(m==='private'){ev=ev.filter(function(e){return e.premium;});var b=[];if(!state.premium)b.push({t:'privatenote'});b=b.concat(ev.map(function(e){return {t:'reco',id:e.id,reason:'Members only'};}));if(!ev.length)b.push({t:'emptycat'});return b;}
+ return foryouFeed();}
+function renderBlock(bk){
+ if(bk.t==='hero')return coverCard(byId(bk.id),420,bk.reason);
+ if(bk.t==='reco')return recoBlock(byId(bk.id),bk.reason);
+ if(bk.t==='proof')return proofCard(byId(bk.id));
+ if(bk.t==='host')return hostCard(byId(bk.id),bk.ago);
+ if(bk.t==='friend')return friendCard(byId(bk.id),bk.who,bk.action,bk.ago);
+ if(bk.t==='premium')return premiumFeedCard(byId(bk.id));
+ if(bk.t==='post')return postCard(bk.post);
+ if(bk.t==='strip')return strip(bk.title,bk.ids);
+ if(bk.t==='collection')return strip(bk.title,bk.ids,bk.sub);
+ if(bk.t==='privatenote')return '<div class="card" style="padding:15px;display:flex;gap:11px;align-items:flex-start;border-color:rgba(201,168,106,.3)"><span style="color:var(--gold);margin-top:1px">'+ico('lock',20,1.8)+'</span><div style="flex:1"><div style="font-size:13.5px;color:var(--bone);line-height:1.5"><b>Private events</b> are hosted for verified members. Join Premium to reserve a seat.</div><button class="press" data-act="nav" data-screen="premium" style="margin-top:10px;background:var(--gold);color:#0B0A0C;border:none;border-radius:11px;padding:9px 15px;font-weight:600;font-size:13px;cursor:pointer">Explore Premium</button></div></div>';
+ if(bk.t==='emptycat')return '<div style="text-align:center;padding:36px 24px;color:var(--ash);font-size:13.5px">No private events in '+cityShort()+' right now.</div>';
+ if(bk.t==='empty')return '<div style="text-align:center;padding:46px 24px;color:var(--ash)"><div style="font-size:15px;font-weight:600;color:var(--bone);margin-bottom:6px">Quiet in here</div><div style="font-size:13.5px;line-height:1.5">Follow hosts and people to see their new events and posts.</div></div>';
+ return '';}
+var FEED_TABS=[['foryou','For You'],['following','Following'],['nearby','Nearby'],['public','Public'],['private','Private']];
+function homeHTML(){var blocks=buildFeed();
+ var body=blocks.map(function(bk,i){return '<div class="rise" style="animation-delay:'+Math.min(i*40,260)+'ms">'+renderBlock(bk)+'</div>';}).join('');
+ var tabs=FEED_TABS.map(function(t){return '<button class="press seg'+(state.feed===t[0]?' on':'')+'" data-act="feed" data-feed="'+t[0]+'">'+t[1]+'</button>';}).join('');
+ return '<div style="padding:6px 20px calc(var(--bot) + 24px)">'
+ +'<div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 16px">'
+ +'<button class="press" data-act="picker" style="background:none;border:none;padding:0;cursor:pointer;text-align:left"><div style="font-size:12.5px;color:var(--ash)">Good evening, Ava</div>'
+ +'<div style="display:flex;align-items:center;gap:5px;margin-top:1px;color:var(--ember)">'+ico('pin',15,2)+'<span style="font-weight:700;font-size:21px;letter-spacing:-.02em;color:var(--bone)">'+cityShort()+'</span><span style="color:var(--ash)">'+ico('chevD',14)+'</span></div></button>'
+ +'<div style="display:flex;align-items:center;gap:2px">'
+ +'<button class="press hicon" data-act="host:open" title="Create">'+ico('plus',24)+'</button>'
+ +'<button class="press hicon" data-act="nav" data-screen="notifications" style="position:relative">'+ico('bell',22)+(unreadNotifs()?'<span style="position:absolute;top:7px;right:8px;min-width:7px;height:7px;border-radius:50%;background:var(--ember);border:1.5px solid var(--ink)"></span>':'')+'</button>'
+ +'<button class="press" data-act="nav" data-screen="profile" style="border:none;background:none;padding:0;margin-left:4px">'+avatarPlain('ava',36)+'</button></div></div>'
+ +'<div class="scroll" style="display:flex;gap:20px;border-bottom:1px solid var(--line);padding:0 2px 0;margin-bottom:16px;overflow-x:auto">'+tabs+'</div>'
+ +'<div style="display:flex;flex-direction:column;gap:20px">'+body+'</div></div>';}
+
+/* ---------- discover ---------- */
+var WHEN_OPTS=['Any time','Today','This weekend','This week'];
+var PRICE_OPTS=['Any price','Free','Under $30','$30+'];
+var SORT_OPTS=['Recommended','Soonest','Nearest','Most popular','Price'];
+function filtersActive(){return state.whenIdx>0||state.priceIdx>0||state.sortIdx>0;}
+function filterSort(list){var l=list.slice();
+ if(state.priceIdx===1)l=l.filter(function(e){return e.minPrice===0;});
+ else if(state.priceIdx===2)l=l.filter(function(e){return e.minPrice>0&&e.minPrice<30;});
+ else if(state.priceIdx===3)l=l.filter(function(e){return e.minPrice>=30;});
+ if(state.whenIdx===1)l=l.filter(function(e){return /Tonight|Tomorrow/.test(e.when);});
+ else if(state.whenIdx===2)l=l.filter(function(e){return /Sat|Sun|Tonight/.test(e.when);});
+ if(state.sortIdx===2)l.sort(function(a,b){return a.dist-b.dist;});
+ else if(state.sortIdx===3||state.sortIdx===0)l.sort(function(a,b){return b.going-a.going;});
+ else if(state.sortIdx===4)l.sort(function(a,b){return a.minPrice-b.minPrice;});
+ return l;}
+function catTile(c){var n=cityEvents().filter(function(e){return e.cat===c.key;}).length;
+ return '<button class="press" data-act="cat" data-cat="'+c.key+'" style="display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:15px;padding:13px 12px;cursor:pointer;text-align:left;width:100%">'
+ +'<span class="ic" style="color:var(--ember)">'+ico(c.icon,19,1.8)+'</span>'
+ +'<div style="flex:1;min-width:0"><div style="font-weight:600;font-size:14px;color:var(--bone);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+c.label+'</div><div style="font-size:11px;color:var(--ash);margin-top:1px">'+n+' event'+(n!==1?'s':'')+'</div></div></button>';}
+function filterBar(){
+ var chips=[['sortIdx',SORT_OPTS,'sort'],['whenIdx',WHEN_OPTS,'cal'],['priceIdx',PRICE_OPTS,'wallet']];
+ var row=chips.map(function(c){var v=state[c[0]];var on=v>0;return '<button class="press fchip" data-act="filter:open" style="'+(on?'border-color:var(--ember);color:var(--ember)':'')+'">'+ico(c[2],15,1.8)+(c[0]==='sortIdx'?(on?SORT_OPTS[v]:'Sort'):(on?[WHEN_OPTS,PRICE_OPTS][chips.indexOf(c)-1][v]:c[2]==='cal'?'When':'Price'))+'</button>';}).join('');
+ return '<div class="scroll" style="display:flex;gap:8px;overflow-x:auto;margin:0 -20px 4px;padding:0 20px 2px">'+row+(filtersActive()?'<button class="press fchip" data-act="filter:clear" style="border-color:var(--line2)">'+ico('x',14,2)+'Clear</button>':'')+'</div>';}
+function browseHTML(){var ev=cityEvents();var r=rng(hashStr(cityName()));
+ var trending=ev.slice().sort(function(a,b){return b.going-a.going;}).slice(0,6).map(function(e){return e.id;});
+ var tonight=ev.filter(function(e){return /Tonight|Tomorrow|PM/.test(e.when);}).slice(0,6).map(function(e){return e.id;});
+ var free=ev.filter(function(e){return e.minPrice===0;}).map(function(e){return e.id;});
+ var prem=ev.filter(function(e){return e.premium;}).map(function(e){return e.id;});
+ var near=ev.slice().sort(function(a,b){return a.dist-b.dist;}).slice(0,6).map(function(e){return e.id;});
+ var like=ev.slice().sort(function(){return r()-.5;}).slice(0,6).map(function(e){return e.id;});
+ return '<button class="press" data-act="nav" data-screen="tourist" style="width:100%;display:flex;align-items:center;gap:13px;background:linear-gradient(120deg,#1a1220,#12101a);border:1px solid var(--line2);border-radius:18px;padding:15px;margin-bottom:22px;cursor:pointer;text-align:left">'
+ +'<span class="ic" style="color:var(--ember)">'+ico('globe',22,1.8)+'</span><div style="flex:1"><div style="font-weight:600;font-size:15px;color:var(--bone)">New in '+cityShort()+'?</div><div style="font-size:12.5px;color:var(--ash);margin-top:1px">See the city like a local — one perfect evening</div></div><span style="color:var(--ash)">'+ico('chevR',18)+'</span></button>'
+ +'<div style="font-weight:700;font-size:16px;letter-spacing:-.01em;color:var(--bone);margin:0 0 13px">Browse by category</div>'
+ +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:26px">'+CATS.filter(function(c){return cityEvents().filter(function(e){return e.cat===c.key;}).length>0;}).map(catTile).join('')+'</div>'
+ +'<div style="display:flex;flex-direction:column;gap:26px">'+strip('Trending this week',trending)+strip('Happening tonight',tonight)+(prem.length?strip('Members-only',prem):'')+(free.length?strip('Free this weekend',free):'')+strip('Near you',near)+strip('You might like',like)+'</div>';}
+function resultList(list,heading){if(!list.length)return '<div style="text-align:center;padding:50px 20px;color:var(--ash)"><div style="display:flex;justify-content:center;margin-bottom:10px">'+ico('search',30,1.6)+'</div><div style="font-size:15px;font-weight:600;color:var(--bone);margin-bottom:6px">Nothing matches</div><div style="font-size:13.5px">Try clearing a filter or a different search.</div></div>';
+ return (heading?'<div style="font-size:13px;color:var(--ash);margin-bottom:12px">'+heading+'</div>':'')+'<div style="display:flex;flex-direction:column;gap:12px">'+list.map(eventRow).join('')+'</div>';}
+function categoryListHTML(key){var c=null;for(var i=0;i<CATS.length;i++)if(CATS[i].key===key)c=CATS[i];if(!c)return browseHTML();
+ var list=filterSort(cityEvents().filter(function(e){return e.cat===key;}));
+ return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><button class="press" data-act="cat:clear" style="display:inline-flex;align-items:center;gap:8px;border:1px solid var(--ember);background:rgba(255,91,61,.08);color:var(--bone);border-radius:999px;padding:8px 14px;font-weight:600;font-size:13.5px;cursor:pointer"><span style="color:var(--ember)">'+ico(c.icon,15,1.8)+'</span>'+c.label+' <span class="mut">'+ico('x',13,2.2)+'</span></button></div>'+filterBar()+'<div style="height:14px"></div>'+resultList(list,list.length+' event'+(list.length!==1?'s':'')+' in '+catLabel(key));}
+function searchResultsHTML(q){var list=filterSort(cityEvents().filter(function(e){return (e.title+' '+e.cat+' '+e.venue+' '+e.host).toLowerCase().indexOf(q)>-1;}));
+ return filterBar()+'<div style="height:14px"></div>'+resultList(list,'<b style="color:var(--bone)">'+list.length+' result'+(list.length!==1?'s':'')+'</b> for &ldquo;'+esc(state.query)+'&rdquo;');}
+function discoverBodyHTML(){var q=state.query.trim().toLowerCase();if(q)return searchResultsHTML(q);if(state.exploreCat)return categoryListHTML(state.exploreCat);
+ if(filtersActive())return filterBar()+'<div style="height:14px"></div>'+resultList(filterSort(cityEvents()),'All events in '+cityShort());
+ return browseHTML();}
+function discoverHTML(){return '<div style="padding:6px 0 calc(var(--bot) + 24px)"><div style="padding:0 20px"><div class="h1" style="margin:4px 0 14px">Discover</div>'
+ +'<div class="searchbox" style="display:flex;align-items:center;gap:9px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:14px"><span class="ic mut">'+ico('search',18)+'</span>'
+ +'<input id="searchInput" data-input="search" value="'+esc(state.query)+'" placeholder="Search events, hosts, places" autocomplete="off" autocapitalize="off" style="flex:1;min-width:0;border:none;background:none;font-size:15px;color:var(--bone);outline:none"/>'
+ +'<button id="searchClear" class="press" data-act="search:clear" style="display:'+(state.query?'flex':'none')+';border:none;background:var(--surface2);color:var(--ash);width:22px;height:22px;border-radius:50%;cursor:pointer;align-items:center;justify-content:center">'+ico('x',12,2.2)+'</button></div></div>'
+ +'<div id="exploreBody" style="padding:0 20px">'+discoverBodyHTML()+'</div></div>';}
+
+/* ---------- tourist ---------- */
+function touristHTML(){var ev=cityEvents(),byGoing=ev.slice().sort(function(a,b){return b.going-a.going;});
+ var tonight=ev.filter(function(e){return /Tonight|Tomorrow|PM/.test(e.when);}).slice(0,6).map(function(e){return e.id;});
+ var near=ev.slice().sort(function(a,b){return a.dist-b.dist;}).slice(0,6).map(function(e){return e.id;});var hero=byGoing[0];
+ return '<div style="padding:8px 20px calc(var(--bot) + 30px)"><div style="display:flex;align-items:center;gap:14px;margin:2px 0 20px"><button class="press" data-act="back" style="width:40px;height:40px;border:1px solid var(--line2);border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('chevL',20)+'</button><div><div class="eyebrow">City guide</div><div style="font-weight:700;font-size:20px;letter-spacing:-.02em;color:var(--bone)">New in '+cityShort()+'</div></div></div>'
+ +'<div style="font-size:14px;line-height:1.5;color:var(--ash);margin-bottom:20px">Just landed? Here is '+cityName()+' in one evening — the essentials, hand-picked, no local knowledge required.</div>'
+ +'<div style="font-weight:700;font-size:15px;color:var(--bone);margin-bottom:10px">If you only do one thing</div>'+coverCard(hero,300,'The city’s signature night')
+ +'<div style="height:26px"></div><div style="display:flex;flex-direction:column;gap:26px">'+strip('On tonight',tonight)+strip('Within a short walk',near)+'</div>'
+ +'<div style="margin-top:26px;border:1px solid rgba(201,168,106,.35);border-radius:20px;padding:18px;background:linear-gradient(120deg,#1a1520,#121019)"><div style="display:flex;align-items:center;gap:8px;color:var(--gold);margin-bottom:8px">'+ico('diamond',18,1.8)+'<span style="font-weight:700;font-size:15px;color:var(--bone)">City Concierge</span></div><div style="font-size:13px;line-height:1.55;color:var(--ash);margin-bottom:14px">Premium members get a hand-built plan for any city they land in, plus priority tables and skip-the-line entry.</div><button class="press btn" data-act="nav" data-screen="premium" style="background:var(--gold);color:#0B0A0C">Explore Premium</button></div></div>';}
+
+/* ---------- notifications ---------- */
+function notificationsHTML(){var rows=NOTIFS.map(function(n,i){
+ var lead=n.user?avatarPlain(n.user,42):'<span class="avatar" style="width:42px;height:42px;background:var(--surface2);color:var(--ember)">'+ico(n.ic,20,1.8)+'</span>';
+ var badge=n.user?'<span style="position:absolute;bottom:-2px;right:-2px;width:20px;height:20px;border-radius:50%;background:var(--surface);border:2px solid var(--ink);display:flex;align-items:center;justify-content:center;color:var(--ember)">'+ico(n.ic,12,1.9)+'</span>':'';
+ return '<button class="press" data-act="notiftap" data-idx="'+i+'" style="width:100%;display:flex;align-items:center;gap:12px;padding:13px 4px;background:'+(n.unread?'rgba(255,91,61,.05)':'none')+';border:none;border-bottom:1px solid var(--line);cursor:pointer;text-align:left">'
+  +'<span style="position:relative;flex:none">'+lead+badge+'</span>'
+  +'<div style="flex:1;min-width:0"><div style="font-size:13.5px;line-height:1.4;color:var(--bone)">'+(n.user?'<b>'+USERS[n.user].name+'</b> ':'')+n.text+'</div><div style="font-size:11.5px;color:var(--ash);margin-top:2px">'+n.ago+'</div></div>'
+  +(n.unread?'<span style="flex:none;width:8px;height:8px;border-radius:50%;background:var(--ember)"></span>':(n.eventId?'<span style="flex:none;color:var(--ash)">'+ico('chevR',16)+'</span>':''))+'</button>';}).join('');
+ return '<div style="padding:8px 20px calc(var(--bot) + 30px)"><div style="display:flex;align-items:center;gap:14px;margin:2px 0 8px"><button class="press" data-act="back" style="width:40px;height:40px;border:1px solid var(--line2);border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('chevL',20)+'</button><div style="font-weight:700;font-size:22px;letter-spacing:-.02em;color:var(--bone);flex:1">Notifications</div>'+(unreadNotifs()?'<button class="press" data-act="readall" style="background:none;border:none;color:var(--ember);font-weight:600;font-size:13px;cursor:pointer">Mark all read</button>':'')+'</div>'+rows+'</div>';}
+
+/* ---------- chat + thread ---------- */
+function chatHTML(){var list=CONVOS.filter(function(c){return !state.blocked[c.user];});
+ var rows=list.map(function(c){var u=USERS[c.user],last=c.msgs[c.msgs.length-1];var muted=state.muted[c.user];
+  return '<div class="press" data-act="thread" data-key="'+c.user+'" style="display:flex;align-items:center;gap:12px;padding:11px 0;cursor:pointer;border-bottom:1px solid var(--line)">'+avatarPlain(c.user,50)
+  +'<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font-weight:600;font-size:15px;color:var(--bone)">'+u.name+'</span>'+(isVerified(c.user)?vbadge(14):'')+(muted?'<span class="mut">'+ico('mute',13,1.8)+'</span>':'')+'<span style="margin-left:auto;font-size:11.5px;color:var(--ash)">'+c.ago+'</span></div>'
+  +'<div style="display:flex;align-items:center;gap:8px;margin-top:2px"><span style="flex:1;min-width:0;font-size:13px;color:'+(c.unread?'var(--bone)':'var(--ash)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(last.f==='me'?'You: ':'')+esc(last.t)+'</span>'+(c.unread?'<span style="flex:none;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:var(--ember);color:#0B0A0C;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">'+c.unread+'</span>':'')+'</div></div></div>';}).join('');
+ return '<div style="padding:6px 20px calc(var(--bot) + 24px)"><div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 12px"><div class="h1">Chat</div><button class="press hicon" data-act="toast" data-msg="Start a new message">'+ico('pencil',22)+'</button></div>'
+ +'<div style="font-size:11.5px;color:var(--ash);margin-bottom:6px;display:flex;align-items:center;gap:6px">'+ico('lock',13,1.8)+' Messages are private between you and the recipient</div>'
+ +(rows||'<div style="text-align:center;padding:50px 20px;color:var(--ash)">No conversations yet.</div>')+'</div>';}
+function threadHTML(){var key=state.threadUser,c=convoOf(key),u=USERS[key];if(!c){c={user:key,msgs:[]};CONVOS.push(c);}
+ var bubbles=c.msgs.map(function(m){return '<div class="bubble '+(m.f==='me'?'me':'them')+'">'+esc(m.t)+(m.w?'<div style="font-size:10px;opacity:.6;margin-top:3px;text-align:right">'+m.w+'</div>':'')+'</div>';}).join('');
+ return '<div style="position:absolute;inset:0;display:flex;flex-direction:column">'
+ +'<div style="flex:none;padding:calc(max(var(--top),12px) + 6px) 14px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line);background:var(--ink)">'
+ +'<button class="press hicon" data-act="back">'+ico('chevL',22)+'</button>'
+ +'<button class="press" data-act="user" data-key="'+key+'" style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;flex:1;min-width:0;padding:0">'+avatarPlain(key,36)+'<div style="text-align:left;min-width:0"><div style="display:flex;align-items:center;gap:5px"><span style="font-weight:600;font-size:15px;color:var(--bone)">'+u.name+'</span>'+(isVerified(key)?vbadge(14):'')+'</div><div style="font-size:11.5px;color:var(--ash)">@'+u.handle+'</div></div></button>'
+ +'<button class="press hicon" data-act="more" data-mtype="user" data-key="'+key+'">'+ico('more',22)+'</button></div>'
+ +'<div id="threadScroll" class="scroll" style="flex:1;overflow-y:auto;padding:16px 16px 10px;display:flex;flex-direction:column;gap:8px">'+bubbles+'</div>'
+ +'<div style="flex:none;padding:8px 12px calc(max(var(--bot),8px) + 6px);border-top:1px solid var(--line);display:flex;align-items:center;gap:9px;background:var(--ink)">'
+ +'<input id="msgInput" data-input="msg" placeholder="Message" autocomplete="off" style="flex:1;min-width:0;border:1px solid var(--line2);background:var(--surface2);border-radius:999px;padding:12px 15px;font-size:14.5px;color:var(--bone);outline:none"/>'
+ +'<button class="press" data-act="send" style="flex:none;width:44px;height:44px;border:none;border-radius:50%;background:var(--ember);color:#0B0A0C;cursor:pointer;display:flex;align-items:center;justify-content:center">'+ico('send',20,2)+'</button></div></div>';}
+
+/* ---------- premium ---------- */
+function premiumHTML(){var benefits=[
+  ['star','Verified badge','A member seal on your profile, posts and messages'],
+  ['diamond','Members-only events','Discover and join exclusive tables and nights'],
+  ['waitlist','Priority RSVP','Skip waitlists on high-demand events'],
+  ['ticket','Zero booking fees','Every ticket, no added service charge'],
+  ['chat','Members lounge','A private space to plan nights with other members'],
+  ['globe','City Concierge','A hand-built plan for any city you land in'],
+  ['userPlus','Two guest passes','Bring friends to members-only events each month']];
+ var ev=cityEvents().filter(function(e){return e.premium;});
+ return '<div style="padding-bottom:calc(var(--bot) + 24px)"><div style="position:relative;padding:calc(max(var(--top),12px) + 8px) 20px 24px;background:linear-gradient(150deg,#241a12,#12101a)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px"><button class="press glass" data-act="back" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('chevL',20)+'</button>'+(state.premium?'<span class="prem-chip" style="color:var(--gold)">'+ico('check',12,2.4)+' Active</span>':'')+'</div>'
+ +'<div style="color:var(--gold);margin-bottom:10px">'+ico('diamond',30,1.7)+'</div><div style="font-weight:700;font-size:28px;letter-spacing:-.03em;color:var(--bone);line-height:1.1">Event House<br>Premium</div><div style="font-size:14px;line-height:1.5;color:var(--ash);margin-top:10px;max-width:300px">Understated benefits for people who go out often. A verified badge, members-only nights, and a concierge in every city.</div></div>'
+ +'<div style="padding:20px"><div style="display:flex;flex-direction:column;gap:2px;margin-bottom:22px">'+benefits.map(function(b){return '<div style="display:flex;align-items:flex-start;gap:13px;padding:13px 0;border-bottom:1px solid var(--line)"><span style="color:var(--gold);margin-top:1px">'+ico(b[0],20,1.8)+'</span><div><div style="font-weight:600;font-size:14.5px;color:var(--bone)">'+b[1]+'</div><div style="font-size:12.5px;color:var(--ash);margin-top:2px;line-height:1.45">'+b[2]+'</div></div></div>';}).join('')+'</div>'
+ +(ev.length?'<div style="font-weight:700;font-size:16px;color:var(--bone);margin-bottom:12px">Members-only in '+cityShort()+'</div><div class="scroll" style="display:flex;gap:12px;overflow-x:auto;margin:0 -20px 8px;padding:0 20px 4px">'+ev.map(function(e){return wideCard(e);}).join('')+'</div>':'')
+ +'</div></div>';}
+
+/* ---------- profile ---------- */
+function statCol(n,l,act){return '<'+(act?'button':'div')+(act?' class="press" data-act="'+act+'"':'')+' style="background:none;border:none;cursor:'+(act?'pointer':'default')+';padding:0;text-align:center"><div style="font-weight:700;font-size:18px;color:var(--bone)">'+n+'</div><div style="font-size:11.5px;color:var(--ash)">'+l+'</div></'+(act?'button':'div')+'>';}
+function composeInline(){return '<button class="press" data-act="compose:open" style="width:100%;display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:13px 15px;cursor:pointer;text-align:left;margin-bottom:16px">'+avatarPlain('ava',34)+'<span style="flex:1;color:var(--ash);font-size:14.5px">Share something with your followers…</span><span style="color:var(--ember)">'+ico('image',20,1.8)+'</span></button>';}
+function profileHTML(){var mine=allPosts().filter(function(p){return p.author==='ava';});
+ var attended=[byId(1),byId(7),byId(4)];var tabPosts=state.profileTab==='posts';
+ var body=tabPosts?(composeInline()+(mine.length?'<div style="display:flex;flex-direction:column;gap:14px">'+mine.map(function(p){return postCard(p);}).join('')+'</div>':'<div style="text-align:center;padding:30px;color:var(--ash);font-size:13.5px">No posts yet — share your first moment above.</div>'))
+  :'<div style="display:flex;flex-direction:column;gap:12px">'+attended.map(eventRow).join('')+'</div>';
+ return '<div style="padding-bottom:calc(var(--bot) + 24px)"><div style="position:relative;height:112px;background:#141215;overflow:hidden;margin-top:calc(-1 * max(var(--top),12px))">'+userCover('ava')+'<div style="position:absolute;top:calc(max(var(--top),12px) + 8px);right:14px;display:flex;gap:8px"><button class="press glass" data-act="compose:open" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('pencil',18,1.8)+'</button><button class="press glass" data-act="settings" data-key="Settings" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('cog',19,1.7)+'</button></div></div>'
+ +'<div style="padding:0 20px"><div style="margin-top:-32px;margin-bottom:12px;display:flex;align-items:flex-end;justify-content:space-between"><span class="avatar" style="width:78px;height:78px;background:'+USERS.ava.bg+';font-size:28px;border:3px solid var(--ink)">AR'+avPhoto(USERS.ava)+'</span><button class="press" data-act="settings" data-key="EditProfile" style="border:1px solid var(--line2);background:transparent;color:var(--bone);border-radius:999px;padding:9px 16px;font-weight:600;font-size:13.5px;cursor:pointer">Edit profile</button></div>'
+ +'<div style="display:flex;align-items:center;gap:6px"><span style="font-weight:700;font-size:21px;letter-spacing:-.02em;color:var(--bone)">Ava Reyes</span>'+(state.premium?vbadge(17):'')+'</div><div style="font-size:13px;color:var(--ash);margin-top:1px">@avareyes · '+cityShort()+'</div>'
+ +'<div style="font-size:13.5px;line-height:1.5;color:var(--bone);margin:12px 0">'+USERS.ava.bio+'</div>'
+ +'<div style="display:flex;gap:22px;margin-bottom:18px">'+statCol(mine.length,'Posts')+statCol(USERS.ava.followers,'Followers')+statCol(followUserCount()+followHostCount(),'Following')+statCol(state.saved.length,'Saved','saved')+'</div>'
+ +(state.premium?'<div style="display:flex;align-items:center;gap:10px;border:1px solid rgba(201,168,106,.4);border-radius:16px;padding:13px 15px;margin-bottom:16px;background:linear-gradient(120deg,#1a1520,#121019)"><span style="color:var(--gold)">'+ico('diamond',20,1.8)+'</span><div style="flex:1"><div style="font-weight:600;font-size:14px;color:var(--bone)">Premium member</div><div style="font-size:12px;color:var(--ash)">Verified · renews monthly</div></div><button class="press" data-act="settings" data-key="Premium" style="background:none;border:none;color:var(--gold);font-weight:600;font-size:13px;cursor:pointer">Manage</button></div>'
+  :'<button class="press" data-act="nav" data-screen="premium" style="width:100%;display:flex;align-items:center;gap:12px;border:1px solid rgba(201,168,106,.4);border-radius:16px;padding:15px;margin-bottom:16px;background:linear-gradient(120deg,#1a1520,#121019);cursor:pointer;text-align:left"><span style="color:var(--gold)">'+ico('diamond',22,1.8)+'</span><div style="flex:1"><div style="font-weight:600;font-size:15px;color:var(--bone)">Go Premium</div><div style="font-size:12px;color:var(--ash);margin-top:1px">Verified badge, members-only events & more</div></div><span style="color:var(--ash)">'+ico('chevR',18)+'</span></button>')
+ +'<button class="press" data-act="nav" data-screen="create" style="width:100%;display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 15px;margin-bottom:20px;cursor:pointer"><span style="width:38px;height:38px;border-radius:11px;background:var(--ember);display:flex;align-items:center;justify-content:center;color:#0B0A0C">'+ico('plus',22,2.2)+'</span><div style="flex:1;text-align:left"><div style="font-weight:600;font-size:15px;color:var(--bone)">Host an event</div><div style="font-size:12px;color:var(--ash);margin-top:1px">Publish in minutes — free & paid</div></div><span style="color:var(--ash)">'+ico('chevR',18)+'</span></button>'
+ +'<div style="display:flex;gap:22px;border-bottom:1px solid var(--line);padding:0 2px;margin-bottom:18px"><button class="press seg'+(tabPosts?' on':'')+'" data-act="ptab" data-tab="posts">Posts</button><button class="press seg'+(!tabPosts?' on':'')+'" data-act="ptab" data-tab="events">Events</button></div>'+body+'</div></div>';}
+function userProfileHTML(){var key=state.profileUser,u=USERS[key];if(!u)return '<div style="padding:60px 20px">User not found.</div>';
+ var blocked=!!state.blocked[key],muted=!!state.muted[key],following=!!state.followingUsers[key];
+ var posts=allPosts().filter(function(p){return p.author===key;});
+ return '<div style="padding-bottom:calc(var(--bot) + 24px)"><div style="position:relative;height:120px;background:#141215;overflow:hidden;margin-top:calc(-1 * max(var(--top),12px))">'+userCover(key)+'<div style="position:absolute;top:calc(max(var(--top),12px) + 8px);left:14px;right:14px;display:flex;justify-content:space-between"><button class="press glass" data-act="back" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('chevL',20)+'</button><button class="press glass" data-act="more" data-mtype="user" data-key="'+key+'" style="width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('more',20)+'</button></div></div>'
+ +'<div style="padding:0 20px"><div style="margin-top:-34px;margin-bottom:12px"><span class="avatar" style="width:76px;height:76px;background:'+u.bg+';font-size:27px;border:3px solid var(--ink)">'+u.initials+avPhoto(u)+'</span></div>'
+ +'<div style="display:flex;align-items:center;gap:6px"><span style="font-weight:700;font-size:21px;letter-spacing:-.02em;color:var(--bone)">'+u.name+'</span>'+(isVerified(key)?vbadge(17):'')+'</div><div style="font-size:13px;color:var(--ash);margin-top:1px">@'+u.handle+'</div>'
+ +'<div style="font-size:13.5px;line-height:1.5;color:var(--bone);margin:12px 0">'+u.bio+'</div>'
+ +'<div style="display:flex;gap:20px;margin-bottom:16px">'+statCol(u.followers,'Followers')+statCol(u.following,'Following')+'</div>'
+ +(blocked?'<div class="card" style="padding:16px;text-align:center;color:var(--ash);font-size:13.5px">You blocked @'+u.handle+'. <button class="press" data-act="unblock" data-key="'+key+'" style="background:none;border:none;color:var(--ember);font-weight:600;cursor:pointer">Unblock</button></div>'
+  :'<div style="display:flex;gap:10px;margin-bottom:22px"><button class="press" data-act="followuser" data-key="'+key+'" style="flex:1;border:'+(following?'1px solid var(--line2)':'none')+';background:'+(following?'transparent':'var(--bone)')+';color:'+(following?'var(--bone)':'#0B0A0C')+';border-radius:13px;padding:12px;font-weight:600;font-size:14.5px;cursor:pointer">'+(following?'Following':'Follow')+'</button><button class="press" data-act="thread" data-key="'+key+'" style="flex:1;border:1px solid var(--line2);background:transparent;color:var(--bone);border-radius:13px;padding:12px;font-weight:600;font-size:14.5px;cursor:pointer">Message</button></div>'
+  +(muted?'<div style="font-size:12px;color:var(--ash);margin-bottom:14px;display:flex;align-items:center;gap:6px">'+ico('mute',14,1.8)+' Muted — you won’t see their posts in your feed</div>':'')
+  +(posts.length?'<div style="display:flex;flex-direction:column;gap:14px">'+posts.map(function(p){return postCard(p);}).join('')+'</div>':'<div style="text-align:center;padding:34px;color:var(--ash);font-size:13.5px">No posts yet.</div>'))+'</div></div>';}
+
+/* ---------- tickets ---------- */
+var BASE_TICKETS=[
+ {eventId:1,tier:0,qty:1,rel:'in 6 hours',status:'confirmed',past:false},
+ {eventId:7,tier:0,qty:1,rel:'Saturday',status:'confirmed',past:false},
+ {eventId:4,tier:0,qty:2,rel:'in 5 days',status:'confirmed',past:false},
+ {eventId:11,tier:1,qty:1,rel:'Sunday',status:'confirmed',past:false},
+ {eventId:5,tier:0,qty:1,rel:'Aug 3',status:'attended',past:true},
+ {eventId:10,tier:1,qty:2,rel:'Jul 26',status:'checkedin',past:true}
+];
+function allTickets(){return state.myTickets.concat(BASE_TICKETS);}
+function statusChip(t){if(t.status==='checkedin')return '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(75,176,122,.16);color:#5fc98e;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">'+ico('check',11,2.4)+'Checked in</span>';
+ if(t.status==='attended')return '<span style="background:var(--surface2);color:var(--ash);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">Attended</span>';
+ return '<span style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,91,61,.14);color:var(--ember);border-radius:999px;padding:4px 9px;font-size:11px;font-weight:700">'+ico('clock',11,2)+t.rel+'</span>';}
+function ticketCard(t){var e=byId(t.eventId),tier=e.tiers[Math.min(t.tier,e.tiers.length-1)];
+ return '<div class="card" style="overflow:hidden;'+(t.past?'opacity:.72':'')+'"><div class="press" data-act="open" data-id="'+e.id+'" style="display:flex;gap:13px;padding:12px;cursor:pointer">'+thumb(e,64)+'<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'+statusChip(t)+'</div><div style="font-weight:700;font-size:15.5px;line-height:1.18;color:var(--bone);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e.title+'</div><div style="font-size:12px;color:var(--ash);margin-top:3px">'+e.dateShort+' · '+e.venue+'</div></div></div>'
+ +'<div style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-top:1px solid var(--line)"><span style="color:var(--ember)">'+ico('ticket',17,1.8)+'</span><span style="font-size:12.5px;font-weight:600;color:var(--bone)">'+tier.name+(t.qty>1?' × '+t.qty:'')+'</span>'
+ +(t.past?'<span style="margin-left:auto;font-size:12.5px;color:var(--ash)">'+e.dateShort+'</span>':'<button class="press" data-act="viewticket" data-id="'+e.id+'" data-tier="'+t.tier+'" data-qty="'+t.qty+'" style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--line2);color:var(--bone);border-radius:10px;padding:8px 13px;font-size:12.5px;font-weight:600;cursor:pointer">'+ico('qr',15,1.8)+'View ticket</button>')+'</div></div>';}
+function ticketsHTML(){var list=allTickets().filter(function(t){return state.ticketTab==='past'?t.past:!t.past;});
+ var up=allTickets().filter(function(t){return !t.past;}).length;
+ return '<div style="padding:6px 20px calc(var(--bot) + 24px)"><div style="display:flex;justify-content:space-between;align-items:center;margin:4px 0 6px"><div class="h1">Tickets</div><button class="press hicon" data-act="toast" data-msg="Apple Wallet">'+ico('wallet',22,1.8)+'</button></div>'
+ +'<div style="font-size:12.5px;color:var(--ash);margin-bottom:16px">'+up+' upcoming · scan the QR at the door</div>'
+ +'<div style="display:flex;background:var(--surface);border-radius:13px;padding:4px;margin-bottom:20px;border:1px solid var(--line)"><button class="press" data-act="tseg" data-seg="upcoming" style="flex:1;border:none;border-radius:10px;background:'+(state.ticketTab==='past'?'transparent':'var(--ember)')+';color:'+(state.ticketTab==='past'?'var(--ash)':'#0B0A0C')+';font-weight:600;font-size:14px;padding:10px;cursor:pointer">Upcoming</button><button class="press" data-act="tseg" data-seg="past" style="flex:1;border:none;border-radius:10px;background:'+(state.ticketTab==='past'?'var(--ember)':'transparent')+';color:'+(state.ticketTab==='past'?'#0B0A0C':'var(--ash)')+';font-weight:600;font-size:14px;padding:10px;cursor:pointer">Past</button></div>'
+ +(list.length?'<div style="display:flex;flex-direction:column;gap:12px">'+list.map(ticketCard).join('')+'</div>':'<div style="text-align:center;padding:50px 20px;color:var(--ash)"><div style="display:flex;justify-content:center;margin-bottom:10px">'+ico('ticket',30,1.6)+'</div><div style="font-size:15px;font-weight:600;color:var(--bone);margin-bottom:6px">Nothing here yet</div><div style="font-size:13.5px">Events you join will show up here.</div></div>')+'</div>';}
+
+/* ---------- create wizard ---------- */
+function createHTML(){var c=state.create,step=c.step;
+ var dots='<div style="display:flex;gap:6px;margin-bottom:22px">'+[0,1,2,3].map(function(i){return '<div class="stepdot'+(i<=step?' on':'')+'"></div>';}).join('')+'</div>';
+ var head='<div style="display:flex;align-items:center;gap:14px;margin:2px 0 18px"><button class="press" data-act="'+(step===0?'create:exit':'create:back')+'" style="width:40px;height:40px;border:1px solid var(--line2);border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico(step===0?'x':'chevL',20)+'</button><div><div class="eyebrow">Step '+(step+1)+' of 4</div><div style="font-weight:700;font-size:20px;letter-spacing:-.02em;color:var(--bone)">'+['Event details','When & where','Tickets','Review'][step]+'</div></div></div>';
+ var body='';
+ if(step===0){body='<div style="position:relative;height:120px;border-radius:16px;overflow:hidden;border:1.5px dashed var(--line2);margin-bottom:16px;background:#141215">'+cov({cat:c.cat,id:1})+'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--bone)">'+ico('image',26,1.6)+'<span style="font-size:13px;font-weight:600">Cover · '+catLabel(c.cat)+'</span></div></div>'
+  +'<label class="eyebrow" style="display:block;margin-bottom:8px">Title</label><input data-input="c_title" value="'+esc(c.title)+'" placeholder="Give your event a name" class="field" style="margin-bottom:18px">'
+  +'<label class="eyebrow" style="display:block;margin-bottom:8px">Category</label><div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">'+CATS.map(function(x){return '<button class="press chip'+(c.cat===x.key?' on':'')+'" data-act="create:cat" data-cat="'+x.key+'">'+x.label+'</button>';}).join('')+'</div>'
+  +'<label class="eyebrow" style="display:block;margin-bottom:8px">About</label><textarea data-input="c_about" placeholder="What should people expect?" class="field" style="min-height:90px;resize:none">'+esc(c.about)+'</textarea>';}
+ else if(step===1){body='<label class="eyebrow" style="display:block;margin-bottom:8px">Date</label><input data-input="c_date" value="'+esc(c.date)+'" placeholder="e.g. Sat, Aug 23" class="field" style="margin-bottom:16px">'
+  +'<label class="eyebrow" style="display:block;margin-bottom:8px">Time</label><input data-input="c_time" value="'+esc(c.time)+'" placeholder="e.g. 8:00 PM – late" class="field" style="margin-bottom:16px">'
+  +'<label class="eyebrow" style="display:block;margin-bottom:8px">Venue</label><input data-input="c_venue" value="'+esc(c.venue)+'" placeholder="Where is it?" class="field" style="margin-bottom:16px">'
+  +'<div style="display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px"><span style="color:var(--ember)">'+ico('pin',18,1.8)+'</span><div style="flex:1"><div style="font-size:13.5px;font-weight:600;color:var(--bone)">'+cityShort()+'</div><div style="font-size:11.5px;color:var(--ash)">'+countryName()+'</div></div><button class="press" data-act="picker" style="background:none;border:none;color:var(--ember);font-weight:600;font-size:13px;cursor:pointer">Change</button></div>';}
+ else if(step===2){body='<div style="display:flex;gap:10px;margin-bottom:20px"><button class="press" data-act="create:free" style="flex:1;border:'+(c.paid?'1px solid var(--line2)':'none')+';background:'+(c.paid?'transparent':'var(--ember)')+';color:'+(c.paid?'var(--bone)':'#0B0A0C')+';border-radius:13px;padding:15px;font-weight:600;font-size:14.5px;cursor:pointer">Free RSVP</button><button class="press" data-act="create:paid" style="flex:1;border:'+(c.paid?'none':'1px solid var(--line2)')+';background:'+(c.paid?'var(--ember)':'transparent')+';color:'+(c.paid?'#0B0A0C':'var(--bone)')+';border-radius:13px;padding:15px;font-weight:600;font-size:14.5px;cursor:pointer">Paid tickets</button></div>'
+  +(c.paid?'<label class="eyebrow" style="display:block;margin-bottom:8px">Price per ticket</label><div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><span style="font-size:20px;font-weight:700;color:var(--bone)">$</span><input data-input="c_price" value="'+esc(c.price)+'" placeholder="0" inputmode="decimal" class="field"></div>':'<div class="card" style="padding:16px;font-size:13.5px;color:var(--ash);line-height:1.5;margin-bottom:16px">Free events collect RSVPs and hold a spot. You can switch to paid tickets anytime before you publish.</div>')
+  +'<label class="eyebrow" style="display:block;margin-bottom:8px">Capacity (optional)</label><input data-input="c_cap" placeholder="e.g. 80" inputmode="numeric" class="field">';}
+ else{var pr=c.paid?(c.price?'$'+c.price:'Paid'):'Free';body='<div style="border-radius:18px;overflow:hidden;border:1px solid var(--line);margin-bottom:18px"><div style="position:relative;height:180px;background:#141215">'+cov({cat:c.cat,id:2})+'<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(5,4,6,.86))"></div><div style="position:absolute;left:16px;right:16px;bottom:14px"><div style="font-size:11.5px;color:var(--ember);font-weight:600;margin-bottom:4px">'+(c.date||'Date TBC')+(c.time?' · '+c.time:'')+'</div><div style="font-weight:700;font-size:20px;line-height:1.1;color:var(--bone);letter-spacing:-.02em">'+esc(c.title||'Untitled event')+'</div></div></div></div>'
+  +'<div class="card" style="padding:4px 16px;margin-bottom:18px">'+[['Category',catLabel(c.cat)],['Where',c.venue||'—'],['City',cityShort()],['Price',pr]].map(function(x,ix,arr){return '<div style="display:flex;justify-content:space-between;padding:12px 0'+(ix<arr.length-1?';border-bottom:1px solid var(--line)':'')+'"><span style="font-size:13.5px;color:var(--ash)">'+x[0]+'</span><span style="font-size:13.5px;font-weight:600;color:var(--bone)">'+esc(x[1])+'</span></div>';}).join('')+'</div>'
+  +'<div style="font-size:12.5px;color:var(--ash);line-height:1.5;padding:0 2px">By publishing you agree to the <b style="color:var(--bone)">Community Guidelines</b> and confirm this event does not contain objectionable content.</div>';}
+ return '<div style="padding:8px 20px calc(var(--bot) + 24px)">'+head+dots+body+'</div>';}
+function publishedHTML(){var e=state.publishedId?byId(state.publishedId):sel();
+ return '<div style="padding:70px 24px 40px;min-height:100%;display:flex;flex-direction:column;align-items:center;text-align:center"><div style="width:88px;height:88px;border-radius:50%;background:var(--ember);display:flex;align-items:center;justify-content:center;margin-bottom:26px;animation:pop .55s cubic-bezier(.34,1.56,.64,1) both;color:#0B0A0C">'+ico('check',42,2.6)+'</div><div style="font-weight:700;font-size:28px;letter-spacing:-.03em;color:var(--bone);margin-bottom:8px">Event published</div><div style="font-size:15px;line-height:1.5;color:var(--ash);margin-bottom:26px;max-width:290px">It’s live in '+cityShort()+' and discoverable now. Share it to get your first RSVPs.</div>'
+ +'<div style="width:100%;border-radius:18px;overflow:hidden;border:1px solid var(--line);margin-bottom:16px"><div style="position:relative;height:150px;background:#141215">'+cov(e)+'<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 42%,rgba(5,4,6,.86))"></div><div style="position:absolute;left:16px;right:16px;bottom:13px;text-align:left"><div style="font-size:11px;color:var(--ember);font-weight:600;margin-bottom:3px">'+e.when+'</div><div style="font-weight:700;font-size:18px;line-height:1.12;color:var(--bone)">'+e.title+'</div></div></div></div>'
+ +'<button class="press btn-ghost" data-act="toast" data-msg="Share link copied" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:auto">'+ico('share',18,1.8)+'Share event</button></div>';}
+
+/* ---------- settings ---------- */
+function sRow(icon,label,sub,act,data,danger){return '<button class="press" data-act="'+act+'" '+(data||'')+' style="width:100%;display:flex;align-items:center;gap:13px;padding:15px 16px;border:none;border-bottom:1px solid var(--line);cursor:pointer;text-align:left;background:none"><span style="color:'+(danger?'#e5484d':'var(--ash)')+';width:22px;display:flex">'+ico(icon,19,1.8)+'</span><div style="flex:1"><div style="font-size:14.5px;font-weight:500;color:'+(danger?'#e5484d':'var(--bone)')+'">'+label+'</div>'+(sub?'<div style="font-size:12px;color:var(--ash);margin-top:1px">'+sub+'</div>':'')+'</div><span class="mut">'+ico('chevR',17)+'</span></button>';}
+function sw(on){return '<div style="position:relative;width:44px;height:26px;flex:none;border-radius:999px;background:'+(on?'var(--ember)':'var(--surface2)')+';transition:background .2s"><div style="position:absolute;top:3px;left:'+(on?'21px':'3px')+';width:20px;height:20px;border-radius:50%;background:#F4F1EC;transition:left .2s cubic-bezier(.22,1,.36,1)"></div></div>';}
+function toggleRow(icon,label,act,data,on){return '<div class="press" data-act="'+act+'" '+(data||'')+' style="display:flex;align-items:center;gap:13px;padding:15px 16px;border-bottom:1px solid var(--line);cursor:pointer"><span class="mut" style="width:22px;display:flex">'+ico(icon,19,1.8)+'</span><div style="flex:1;font-size:14.5px;font-weight:500;color:var(--bone)">'+label+'</div>'+sw(on)+'</div>';}
+function textPage(title,html){return '<div style="padding:18px 16px;font-size:14px;line-height:1.6;color:var(--ash)">'+html+'</div>';}
+function settingsHTML(){var k=state.settingsKey,rows='';
+ if(k==='Notifications'){rows=toggleRow('bell','Event reminders','toggle','data-k="a"',state.notif.a)+toggleRow('sparkle','New from hosts you follow','toggle','data-k="b"',state.notif.b)+toggleRow('ticket','Price drops & last-minute','toggle','data-k="c"',state.notif.c)+toggleRow('userPlus','New followers','toggle','data-k="d"',state.notif.d)+toggleRow('chat','Direct messages','toggle','data-k="e"',state.notif.e)+toggleRow('bolt','In-app sounds','toggleflag','data-f="sound"',state.sound);}
+ else if(k==='Account'){rows=sRow('user','Edit profile','Ava Reyes · @avareyes','settings','data-key="EditProfile"')+sRow('at','Username','@avareyes','toast','data-msg="Username settings"')+sRow('mail','Email','ava@eventhouse.app','toast','data-msg="Email settings"')+sRow('phone','Phone number','+1 ••• ••• 4821','toast','data-msg="Phone settings"')+sRow('key','Password & security','2FA on','toast','data-msg="Security settings"')+sRow('users','Connected accounts','Apple, Google','toast','data-msg="Connected accounts"')+sRow('doc','Download my data','','toast','data-msg="We’ll email your data export"')+sRow('eyeOff','Deactivate account','Hide your profile temporarily','toast','data-msg="Account deactivated (demo)"')+sRow('trash','Delete account','Permanently remove account & data','delacct','',true);}
+ else if(k==='EditProfile'){rows='<div style="padding:16px"><label class="eyebrow" style="display:block;margin-bottom:8px">Name</label><input class="field" value="Ava Reyes" style="margin-bottom:16px"><label class="eyebrow" style="display:block;margin-bottom:8px">Username</label><input class="field" value="avareyes" style="margin-bottom:16px"><label class="eyebrow" style="display:block;margin-bottom:8px">Bio</label><textarea class="field" style="min-height:80px;resize:none">'+esc(USERS.ava.bio)+'</textarea><button class="press btn" data-act="toast" data-msg="Profile saved" style="margin-top:18px">Save changes</button></div>';}
+ else if(k==='Privacy'){rows=toggleRow('lock','Private account','toggleflag','data-f="privateAcct"',state.privateAcct)+sRow('chat','Who can message you','Everyone','toast','data-msg="Message privacy"')+sRow('pin','Location','While using the app','toast','data-msg="Location settings"')+sRow('block','Blocked accounts','','settings','data-key="Blocked"')+sRow('mute','Muted accounts','','settings','data-key="Muted"')+sRow('shield','Community Guidelines','','settings','data-key="Guidelines"');}
+ else if(k==='Blocked'){var bl=Object.keys(state.blocked).filter(function(x){return state.blocked[x];});rows='<div style="padding:8px 16px">'+(bl.length?bl.map(function(x){return '<div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)">'+avatarPlain(x,38)+'<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--bone)">'+USERS[x].name+'</div><div style="font-size:12px;color:var(--ash)">@'+USERS[x].handle+'</div></div><button class="press" data-act="unblock" data-key="'+x+'" style="background:none;border:1px solid var(--line2);color:var(--bone);border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:600;cursor:pointer">Unblock</button></div>';}).join(''):'<div style="padding:30px 0;text-align:center;color:var(--ash);font-size:13.5px">You haven’t blocked anyone.</div>')+'</div>';}
+ else if(k==='Muted'){var mu=Object.keys(state.muted).filter(function(x){return state.muted[x];});rows='<div style="padding:8px 16px">'+(mu.length?mu.map(function(x){return '<div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid var(--line)">'+avatarPlain(x,38)+'<div style="flex:1"><div style="font-size:14px;font-weight:600;color:var(--bone)">'+USERS[x].name+'</div><div style="font-size:12px;color:var(--ash)">@'+USERS[x].handle+'</div></div><button class="press" data-act="unmute" data-key="'+x+'" style="background:none;border:1px solid var(--line2);color:var(--bone);border-radius:999px;padding:6px 14px;font-size:12.5px;font-weight:600;cursor:pointer">Unmute</button></div>';}).join(''):'<div style="padding:30px 0;text-align:center;color:var(--ash);font-size:13.5px">You haven’t muted anyone.</div>')+'</div>';}
+ else if(k==='Appearance'){rows=sRow('moon','Theme','Dark','toast','data-msg="Event House is dark by design"')+sRow('doc','Text size','Default','toast','data-msg="Text size"');}
+ else if(k==='Language'){rows=['English','Français','Español','Deutsch','日本語','العربية','Português'].map(function(l,i){return sRow(i===0?'check':'globe',l,'',i===0?'toast':'toast','data-msg="Language: '+l+'"');}).join('');}
+ else if(k==='Payment methods'){rows=sRow('ticket','Apple Pay','Default','toast','data-msg="Apple Pay"')+sRow('ticket','Visa •••• 4242','Expires 09/27','toast','data-msg="Card details"')+sRow('plus','Add a card','','toast','data-msg="Add a card"');}
+ else if(k==='Premium'){rows=sRow('diamond','Membership','Premium · renews monthly','nav','data-screen="premium"')+sRow('ticket','Billing history','','toast','data-msg="Billing history"')+sRow('x','Cancel membership','','cancelprem','',true);}
+ else if(k==='Guidelines'){rows=textPage('','<div style="font-weight:600;color:var(--bone);margin-bottom:10px">A place people trust</div>Event House is built on respect. We do not allow harassment, hate speech, threats, nudity or sexual content, or the sale of illegal or regulated goods.<br><br>You can <b style="color:var(--bone)">report</b> any event, post, profile or message, and <b style="color:var(--bone)">block</b> or <b style="color:var(--bone)">mute</b> anyone. Reports are confidential and our team reviews them within 24 hours, removing content and accounts that break these rules.<br><br>By posting you agree there is zero tolerance for objectionable content or abusive users.');}
+ else if(k==='Terms'){rows=textPage('','These demo Terms of Service govern your use of Event House. Tickets are sold by hosts; Event House facilitates discovery and checkout. Do not resell tickets above face value. Full terms would appear here.');}
+ else if(k==='PrivacyPolicy'){rows=textPage('','We collect the minimum needed to run the app: your profile, events you join, and approximate location while in use. We never sell your data. You can download or delete your data anytime from Account. Full policy would appear here.');}
+ else if(k==='Help'){rows=sRow('help','Help centre','','toast','data-msg="Help centre"')+sRow('chat','Contact support','','toast','data-msg="Contact support"')+sRow('flag','Report a problem','','toast','data-msg="Report a problem"');}
+ else if(k==='About'){rows=textPage('','<div style="color:var(--bone);font-weight:600;margin-bottom:6px">Event House</div>Version 2.1 · Rated 17+<br>Made for going out.<br><br>© 2026 Event House. All rights reserved.');}
+ else{rows=sRow('user','Account','Profile, email, security','settings','data-key="Account"')+sRow('bell','Notifications','','settings','data-key="Notifications"')+sRow('shield','Privacy & safety','Private account, blocked, muted','settings','data-key="Privacy"')+sRow('moon','Appearance','Dark','settings','data-key="Appearance"')+sRow('globe','Language','English','settings','data-key="Language"')+sRow('ticket','Payment methods','','settings','data-key="Payment methods"')+(state.premium?sRow('diamond','Premium','Active','settings','data-key="Premium"'):'')+sRow('help','Help & support','','settings','data-key="Help"')+sRow('doc','Terms of Service','','settings','data-key="Terms"')+sRow('lock','Privacy Policy','','settings','data-key="PrivacyPolicy"')+sRow('info','About','v2.1','settings','data-key="About"');}
+ var footer=k==='Settings'?'<div style="text-align:center;padding:20px 0 6px;font-size:11.5px;color:var(--ash)">Event House · v2.1 · Rated 17+</div><button class="press" data-act="signout" style="width:100%;background:none;border:none;color:#e5484d;font-size:14px;font-weight:600;padding:14px;cursor:pointer">Sign out</button>':'';
+ var titles={Settings:'Settings',Account:'Account',EditProfile:'Edit profile',Notifications:'Notifications',Privacy:'Privacy & safety',Blocked:'Blocked accounts',Muted:'Muted accounts',Appearance:'Appearance',Language:'Language','Payment methods':'Payment methods',Premium:'Premium',Guidelines:'Community Guidelines',Terms:'Terms of Service',PrivacyPolicy:'Privacy Policy',Help:'Help & support',About:'About'};
+ return '<div style="padding:8px 20px calc(var(--bot) + 24px)"><div style="display:flex;align-items:center;gap:14px;margin:2px 0 20px"><button class="press" data-act="back" style="width:40px;height:40px;border:1px solid var(--line2);border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('chevL',20)+'</button><div style="font-weight:700;font-size:22px;letter-spacing:-.02em;color:var(--bone)">'+(titles[k]||'Settings')+'</div></div><div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden">'+rows+'</div>'+footer+'</div>';}
+
+/* ---------- detail + booking + checkout + confirm + ticket ---------- */
+function tierRows(){var e=sel();return e.tiers.map(function(t,i){var s=i===Math.min(state.ticketType,e.tiers.length-1);
+ return '<div class="press" data-act="tier" data-idx="'+i+'" style="display:flex;align-items:center;gap:13px;cursor:pointer;background:'+(s?'rgba(255,91,61,.07)':'var(--surface)')+';border:1.5px solid '+(s?'var(--ember)':'var(--line)')+';border-radius:16px;padding:14px"><div style="width:21px;height:21px;flex:none;border-radius:50%;background:'+(s?'var(--ember)':'transparent')+';border:2px solid '+(s?'var(--ember)':'var(--ash)')+';display:flex;align-items:center;justify-content:center">'+(s?'<div style="width:8px;height:8px;border-radius:50%;background:#0B0A0C"></div>':'')+'</div><div style="flex:1"><div style="font-weight:600;font-size:15px;color:var(--bone)">'+t.name+'</div><div style="font-size:12.5px;color:var(--ash);margin-top:1px">'+t.desc+'</div></div><div style="font-weight:700;font-size:15px;color:var(--bone)">'+money(t.price)+'</div></div>';}).join('');}
+function flowHeader(t){return '<div style="display:flex;align-items:center;gap:14px;margin:4px 0 22px"><button class="press" data-act="back" style="width:40px;height:40px;border:1px solid var(--line2);border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('chevL',20)+'</button><div style="font-weight:700;font-size:20px;letter-spacing:-.02em;color:var(--bone)">'+t+'</div></div>';}
+function detailHTML(){var e=sel(),saved=state.saved.indexOf(e.id)>-1,f=!!state.followingHosts[e.host];
+ var locked=e.premium&&!state.premium,goers=e.friends.length?e.friends:['maya','jules','ravi','dee'];
+ return '<div style="padding-bottom:20px;animation:fade .3s ease both"><div style="position:relative;height:340px;background:#141215;margin-top:calc(-1 * max(var(--top),12px))">'+cov(e)+'<div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,4,6,.32) 0%,transparent 26%,var(--ink) 100%)"></div>'
+ +'<div style="position:absolute;top:calc(max(var(--top),12px) + 8px);left:16px;right:16px;display:flex;justify-content:space-between"><button class="press glass" data-act="back" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('chevL',20)+'</button><div style="display:flex;gap:8px"><button class="press glass" data-act="save" data-id="'+e.id+'" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+heartIco(saved,18)+'</button><button class="press glass" data-act="more" data-mtype="event" data-id="'+e.id+'" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('more',20)+'</button></div></div>'
+ +'<div style="position:absolute;bottom:16px;left:18px;display:flex;gap:8px">'+(e.premium?'<div class="prem-chip glass" style="border-color:rgba(201,168,106,.5)">'+ico('diamond',11,2)+' Premium</div>':'')+'<div class="glass" style="border-radius:999px;padding:6px 13px;font-weight:600;font-size:12px;color:var(--bone)">'+catLabel(e.cat)+'</div></div></div>'
+ +'<div style="padding:14px 20px 0"><h1 style="font-weight:700;font-size:27px;line-height:1.12;letter-spacing:-.03em;color:var(--bone);margin:4px 0 18px">'+e.title+'</h1>'
+ +'<div style="display:flex;align-items:center;gap:11px;margin-bottom:22px"><span class="avatar" style="width:38px;height:38px;background:'+e.hostBg+';font-size:13px">'+e.hostInit+'</span><div><div style="font-size:14px;font-weight:600;color:var(--bone)">'+e.host+'</div><div style="font-size:12px;color:var(--ash)">Host · '+e.hostEvents+' events</div></div><button class="press" data-act="followhost" data-host="'+esc(e.host)+'" style="margin-left:auto;border:'+(f?'none':'1.5px solid var(--bone)')+';background:'+(f?'var(--surface2)':'transparent')+';border-radius:999px;padding:8px 16px;font-weight:600;font-size:13px;color:var(--bone);cursor:pointer">'+(f?'Following':'Follow')+'</button></div>'
+ +'<div style="display:flex;flex-direction:column;gap:14px;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:18px;margin-bottom:20px"><div style="display:flex;align-items:center;gap:12px"><span style="width:40px;height:40px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--ember)">'+ico('cal',18,1.8)+'</span><div><div style="font-size:14.5px;font-weight:600;color:var(--bone)">'+e.dateLong+'</div><div style="font-size:12.5px;color:var(--ash)">'+e.timeRange+'</div></div></div><div style="height:1px;background:var(--line)"></div><div style="display:flex;align-items:center;gap:12px"><span style="width:40px;height:40px;border-radius:12px;background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--ember)">'+ico('pin',18,1.8)+'</span><div style="flex:1"><div style="font-size:14.5px;font-weight:600;color:var(--bone)">'+e.venue+'</div><div style="font-size:12.5px;color:var(--ash)">'+e.address+'</div></div><button class="press" data-act="toast" data-msg="Opening in Maps" style="border:1px solid var(--line2);background:transparent;color:var(--bone);border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:600;cursor:pointer">Map</button></div></div>'
+ +'<div style="display:flex;align-items:center;gap:12px;margin-bottom:22px">'+stack(goers.slice(0,5),34,'var(--ink)')+'<div style="font-size:13.5px;color:var(--ash)"><b style="color:var(--bone)">'+e.going+' going</b> · '+(e.friends.length?e.friends.length+' friends':'Be the first of your friends')+'</div></div>'
+ +(locked?'<div style="display:flex;gap:11px;align-items:flex-start;border:1px solid rgba(201,168,106,.35);background:linear-gradient(120deg,#1a1520,#121019);border-radius:16px;padding:15px;margin-bottom:20px"><span style="color:var(--gold);margin-top:1px">'+ico('lock',20,1.8)+'</span><div style="font-size:13px;line-height:1.5;color:var(--ash)"><b style="color:var(--bone)">Members-only event.</b> Join Premium to reserve a seat, plus verified badge and a concierge in every city.</div></div>':'')
+ +'<div style="font-weight:700;font-size:17px;letter-spacing:-.01em;color:var(--bone);margin-bottom:8px">About</div><div style="font-size:14.5px;line-height:1.62;color:var(--ash);margin-bottom:24px">'+e.about+'</div>'
+ +'<div style="font-weight:700;font-size:17px;letter-spacing:-.01em;color:var(--bone);margin-bottom:10px">Tickets</div><div style="display:flex;flex-direction:column;gap:10px">'+tierRows()+'</div></div></div>';}
+function bookingHTML(){var e=sel(),t=curTier();
+ return '<div style="padding:8px 20px 20px">'+flowHeader('Choose tickets')+'<div style="display:flex;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:22px">'+thumb(e,56)+'<div><div style="font-weight:700;font-size:15px;color:var(--bone)">'+e.title+'</div><div style="font-size:12.5px;color:var(--ash);margin-top:3px">'+e.when+' · '+e.venue+'</div></div></div>'
+ +'<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">'+tierRows()+'</div>'
+ +'<div style="display:flex;align-items:center;justify-content:space-between;padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:18px"><div><div style="font-weight:600;font-size:15px;color:var(--bone)">Quantity</div><div style="font-size:12.5px;color:var(--ash)">'+t.name+'</div></div><div style="display:flex;align-items:center;gap:16px"><button class="press" data-act="dec" style="width:38px;height:38px;border:1px solid var(--line2);background:var(--surface2);border-radius:50%;color:var(--bone);cursor:pointer;display:flex;align-items:center;justify-content:center">'+ico('minus',18,2.2)+'</button><span style="font-weight:700;font-size:19px;color:var(--bone);min-width:20px;text-align:center">'+state.qty+'</span><button class="press" data-act="inc" style="width:38px;height:38px;border:none;background:var(--ember);border-radius:50%;color:#0B0A0C;cursor:pointer;display:flex;align-items:center;justify-content:center">'+ico('plus',18,2.2)+'</button></div></div></div>';}
+function checkoutHTML(){var e=sel(),t=curTier(),paid=t.price>0,sub=t.price*state.qty,fee=paid&&!state.premium?2.5*state.qty:0,total=sub+fee;
+ var methods=[['Apple Pay','Fastest checkout'],['Visa •••• 4242','Expires 09/27'],['Add a card','Credit or debit']].map(function(m,i){var s=i===state.method;return '<div class="press" data-act="method" data-idx="'+i+'" style="display:flex;align-items:center;gap:13px;cursor:pointer;background:'+(s?'rgba(255,91,61,.07)':'var(--surface)')+';border:1.5px solid '+(s?'var(--ember)':'var(--line)')+';border-radius:16px;padding:14px"><span style="width:38px;height:26px;border-radius:6px;background:var(--surface2);color:var(--ash);display:flex;align-items:center;justify-content:center">'+ico('ticket',16,1.8)+'</span><div style="flex:1"><div style="font-weight:600;font-size:14.5px;color:var(--bone)">'+m[0]+'</div><div style="font-size:12px;color:var(--ash)">'+m[1]+'</div></div><div style="width:21px;height:21px;flex:none;border-radius:50%;background:'+(s?'var(--ember)':'transparent')+';border:2px solid '+(s?'var(--ember)':'var(--ash)')+';display:flex;align-items:center;justify-content:center">'+(s?'<div style="width:8px;height:8px;border-radius:50%;background:#0B0A0C"></div>':'')+'</div></div>';}).join('');
+ return '<div style="padding:8px 20px 20px">'+flowHeader(paid?'Checkout':'Confirm RSVP')+'<div class="eyebrow" style="margin-bottom:10px">Order</div><div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:22px"><div style="font-size:14px;color:var(--bone);font-weight:600">'+e.title+'</div><div style="font-size:12.5px;color:var(--ash);margin:2px 0 14px">'+e.when+'</div><div style="display:flex;justify-content:space-between;font-size:14px;color:var(--ash);margin-bottom:8px"><span>'+t.name+' × '+state.qty+'</span><span>'+money(sub)+'</span></div>'+(paid?'<div style="display:flex;justify-content:space-between;font-size:14px;color:var(--ash);margin-bottom:12px"><span>Service fee'+(state.premium?' (waived)':'')+'</span><span>'+money(fee)+'</span></div>':'')+'<div style="height:1px;background:var(--line);margin-bottom:12px"></div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-weight:700;font-size:16px;color:var(--bone)">Total</span><span style="font-weight:700;font-size:20px;color:var(--ember)">'+money(total)+'</span></div></div>'
+ +(paid?'<div class="eyebrow" style="margin-bottom:10px">Pay with</div><div style="display:flex;flex-direction:column;gap:10px">'+methods+'</div>':'<div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;font-size:14px;line-height:1.55;color:var(--ash)">This is a free event — no payment needed. Confirming your RSVP holds your spot and adds it to your tickets.</div>')+'</div>';}
+function confirmHTML(){var e=sel(),t=curTier(),free=t.price===0;
+ return '<div style="padding:70px 24px 30px;display:flex;flex-direction:column;align-items:center;text-align:center"><div style="width:88px;height:88px;border-radius:50%;background:var(--ember);display:flex;align-items:center;justify-content:center;margin-bottom:26px;animation:pop .55s cubic-bezier(.34,1.56,.64,1) both;color:#0B0A0C">'+ico('check',42,2.6)+'</div><div style="font-weight:700;font-size:28px;letter-spacing:-.03em;color:var(--bone);margin-bottom:8px">You’re in</div><div style="font-size:15px;line-height:1.5;color:var(--ash);margin-bottom:28px;max-width:290px">'+(free?'Your spot for '+e.title+' is reserved.':'Your '+t.name+' ticket is confirmed.')+' A confirmation is on the way.</div><div style="width:100%;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;gap:13px;text-align:left;margin-bottom:14px">'+thumb(e,60)+'<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:15px;color:var(--bone)">'+e.title+'</div><div style="font-size:12.5px;color:var(--ash);margin-top:4px">'+e.dateLong+'</div><div style="font-size:12.5px;color:var(--ash)">'+t.name+' × '+state.qty+'</div></div></div><button class="press btn-ghost" data-act="toast" data-msg="Added to your calendar" style="display:flex;align-items:center;justify-content:center;gap:8px">'+ico('cal',18,1.8)+'Add to calendar</button></div>';}
+function qrHTML(seed){var n=21,s=seed*7+99;function rnd(){s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;}function fin(r,c){return (r<7&&c<7)||(r<7&&c>=n-7)||(r>=n-7&&c<7);}var cells='';for(var i=0;i<n*n;i++){var r=(i/n)|0,c=i%n,on=rnd()>0.5;if(fin(r,c)){var fr=r<7?r:r-(n-7),fc=c<7?c:c-(n-7);on=(fr===0||fr===6||fc===0||fc===6||(fr>=2&&fr<=4&&fc>=2&&fc<=4));}cells+='<div style="background:'+(on?'#0B0A0C':'transparent')+'"></div>';}return '<div style="display:grid;grid-template-columns:repeat('+n+',1fr);gap:1.6px;width:166px;height:166px">'+cells+'</div>';}
+function ticketHTML(){var e=sel(),t=curTier();return '<div style="padding:8px 20px 40px">'+flowHeader('Your ticket')+'<div style="background:var(--bone);border-radius:22px;overflow:hidden;box-shadow:0 30px 60px -20px rgba(0,0,0,.7)"><div style="position:relative;height:130px;background:#141215">'+cov(e)+'<div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 30%,rgba(5,4,6,.55))"></div><div style="position:absolute;bottom:14px;left:18px;right:18px"><div style="font-weight:700;font-size:20px;line-height:1.14;color:#F4F1EC">'+e.title+'</div></div></div><div style="padding:18px;display:flex;justify-content:space-between"><div><div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:#8A848F;font-weight:700">When</div><div style="font-weight:600;font-size:14px;color:#0B0A0C;margin-top:2px">'+e.dateShort+'</div><div style="font-size:12.5px;color:#8A848F">'+e.timeRange+'</div></div><div style="text-align:right"><div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:#8A848F;font-weight:700">Tier</div><div style="font-weight:600;font-size:14px;color:#0B0A0C;margin-top:2px">'+t.name+'</div><div style="font-size:12.5px;color:#8A848F">Qty '+state.qty+'</div></div></div><div style="position:relative;height:26px"><div style="position:absolute;top:50%;left:-13px;width:26px;height:26px;border-radius:50%;background:var(--ink);transform:translateY(-50%)"></div><div style="position:absolute;top:50%;right:-13px;width:26px;height:26px;border-radius:50%;background:var(--ink);transform:translateY(-50%)"></div><div style="position:absolute;top:50%;left:16px;right:16px;border-top:2px dashed rgba(138,132,143,.35)"></div></div><div style="padding:10px 18px 26px;display:flex;flex-direction:column;align-items:center"><div style="padding:12px;background:#fff;border-radius:14px;margin-bottom:12px">'+qrHTML(e.id)+'</div><div style="font-family:ui-monospace,Menlo,monospace;font-size:12px;letter-spacing:.05em;color:#8A848F">EVH-8F2K9'+e.id+'</div><div style="display:flex;align-items:center;gap:6px;margin-top:10px;background:rgba(75,176,122,.16);border-radius:999px;padding:6px 12px"><div style="width:7px;height:7px;border-radius:50%;background:var(--good)"></div><span style="font-size:12px;font-weight:600;color:#2f7d55">Valid · not yet checked in</span></div></div></div><button class="press btn-ghost" data-act="toast" data-msg="Added to Apple Wallet" style="margin-top:18px;background:#000">Add to Apple Wallet</button><button class="press" data-act="nav" data-screen="tickets" style="width:100%;background:none;border:none;color:var(--ash);font-size:14px;padding:16px;cursor:pointer">See all my tickets</button></div>';}
+
+/* ---------- sheets ---------- */
+var ITEM_H=46;
+function cityPanelHTML(){var co=COUNTRIES[wheel.country];
+ return '<div class="fadein" style="margin-top:18px"><div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:11px"><div style="font-weight:600;font-size:14px;color:var(--bone)">Cities in '+co.name+'</div><div style="font-size:12px;color:var(--ash)">'+co.cities.length+'</div></div><div style="display:flex;flex-wrap:wrap;gap:8px">'+co.cities.map(function(c,i){return '<button class="press chip'+(i===wheel.city?' on':'')+'" data-act="citypick" data-idx="'+i+'">'+c+'</button>';}).join('')+'</div></div>';}
+function pickerHTML(){var items=COUNTRIES.map(function(c,i){return '<div class="witem" data-act="wheelpick" data-idx="'+i+'"><span class="wl">'+c.name+'</span><span class="wc">'+c.code+'</span></div>';}).join('');
+ return '<div class="sheet-bg" data-act="picker:close"></div><div class="sheet" style="max-height:95%"><div class="grab"></div><div style="text-align:center;margin-bottom:6px"><div style="font-weight:700;font-size:22px;letter-spacing:-.02em;color:var(--bone)">Where to?</div><div style="font-size:13px;color:var(--ash);margin-top:3px">Spin to your country, then pick a city</div></div>'
+ +'<div class="wheel"><div class="cws" id="cwScroll"><div class="wsp"></div>'+items+'<div class="wsp"></div></div><div class="wband"></div></div><div id="cityPanel">'+cityPanelHTML()+'</div>'
+ +'<button class="press btn" data-act="loc:confirm" style="margin-top:20px">Show me events</button><button class="press" data-act="loc:visiting" style="width:100%;background:none;border:none;color:var(--ember);font-weight:600;font-size:13.5px;padding:14px 0 2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px">'+ico('globe',16,1.8)+'I’m just visiting — show me the essentials</button></div>';}
+function sheetWrap(closeAct,inner){return '<div class="sheet-bg" data-act="'+closeAct+'"></div><div class="sheet"><div class="grab"></div>'+inner+'</div>';}
+function actBtn(icon,label,act,data,danger){return '<button class="press" data-act="'+act+'" '+(data||'')+' style="width:100%;display:flex;align-items:center;gap:13px;background:none;border:none;padding:15px 4px;cursor:pointer;border-bottom:1px solid var(--line);color:'+(danger?'#e5484d':'var(--bone)')+'"><span style="width:22px;display:flex;color:'+(danger?'#e5484d':'var(--ash)')+'">'+ico(icon,19,1.8)+'</span><span style="font-size:15px;font-weight:500">'+label+'</span></button>';}
+function moreSheet(){var c=state.moreCtx||{},inner='';
+ if(c.type==='user'){var u=USERS[c.key],mu=state.muted[c.key],bl=state.blocked[c.key];inner='<div style="display:flex;align-items:center;gap:11px;padding:2px 4px 16px">'+avatarPlain(c.key,42)+'<div><div style="font-weight:600;font-size:15px;color:var(--bone)">'+u.name+'</div><div style="font-size:12.5px;color:var(--ash)">@'+u.handle+'</div></div></div>'+actBtn('user','View profile','user','data-key="'+c.key+'"')+actBtn('mute',(mu?'Unmute':'Mute')+' @'+u.handle,mu?'unmute':'mute','data-key="'+c.key+'"')+actBtn('block',(bl?'Unblock':'Block')+' @'+u.handle,bl?'unblock':'block','data-key="'+c.key+'"',!bl)+actBtn('flag','Report @'+u.handle,'report:open','data-rtype="account" data-key="'+c.key+'"',true);}
+ else if(c.type==='post'){var mine=c.key==='ava';inner=actBtn('share','Share post','toast','data-msg="Link copied"')+(mine?actBtn('trash','Delete post','delpost','data-id="'+c.id+'"',true):actBtn('mute','Mute @'+USERS[c.key].handle,'mute','data-key="'+c.key+'"'))+actBtn('flag','Report post','report:open','data-rtype="post" data-id="'+c.id+'"',true);}
+ else{inner=actBtn('share','Share event','toast','data-msg="Link copied"')+actBtn('eyeOff','Not interested','toast','data-msg="We’ll show fewer like this"')+actBtn('flag','Report event','report:open','data-rtype="event" data-id="'+c.id+'"',true);}
+ return sheetWrap('more:close',inner+'<button class="press" data-act="more:close" style="width:100%;background:var(--surface2);border:none;color:var(--bone);border-radius:13px;padding:14px;font-weight:600;font-size:15px;cursor:pointer;margin-top:16px">Cancel</button>');}
+function reportSheet(){var reasons=['Spam or scam','Harassment or bullying','Hate speech or symbols','Nudity or sexual content','Violence or dangerous acts','Sale of illegal or regulated goods','False information','Something else'];
+ var inner='<div style="font-weight:700;font-size:19px;letter-spacing:-.01em;color:var(--bone);margin-bottom:4px">Report '+((state.reportCtx&&state.reportCtx.rtype)||'')+'</div><div style="font-size:13px;color:var(--ash);margin-bottom:16px;line-height:1.5">Your report is anonymous. We review every report and act within 24 hours.</div>'+reasons.map(function(r){return '<button class="press" data-act="report:reason" data-reason="'+esc(r)+'" style="width:100%;display:flex;align-items:center;justify-content:space-between;background:none;border:none;padding:14px 4px;cursor:pointer;border-bottom:1px solid var(--line);color:var(--bone)"><span style="font-size:14.5px">'+r+'</span><span class="mut">'+ico('chevR',16)+'</span></button>';}).join('');
+ return sheetWrap('report:close',inner+'<button class="press" data-act="report:close" style="width:100%;background:var(--surface2);border:none;color:var(--bone);border-radius:13px;padding:14px;font-weight:600;font-size:15px;cursor:pointer;margin-top:16px">Cancel</button>');}
+function composeSheet(){return sheetWrap('compose:close','<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><button class="press" data-act="compose:close" style="background:none;border:none;color:var(--ash);font-size:15px;cursor:pointer">Cancel</button><button class="press" data-act="compose:post" style="background:var(--ember);color:#0B0A0C;border:none;border-radius:999px;padding:8px 18px;font-weight:600;font-size:14px;cursor:pointer">Post</button></div>'
+ +'<div style="display:flex;gap:11px">'+avatarPlain('ava',40)+'<div style="flex:1"><textarea id="compText" data-input="comp" placeholder="Share a moment from a night out…" style="width:100%;min-height:110px;border:none;background:none;color:var(--bone);font-size:16px;line-height:1.5;outline:none;resize:none">'+esc(state.composeText)+'</textarea>'
+ +(state.draftPhoto?'<div style="position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);margin-top:8px">'+mediaOf(state.draftPhoto,7)+'<button class="press" data-act="compose:rmphoto" style="position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;border:none;background:rgba(5,4,6,.7);color:var(--bone);cursor:pointer;display:flex;align-items:center;justify-content:center">'+ico('x',15,2.2)+'</button></div>':'')
+ +'<div style="display:flex;align-items:center;gap:16px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)"><label class="press" style="display:inline-flex;align-items:center;gap:7px;color:var(--ember);cursor:pointer;font-size:13.5px;font-weight:600">'+ico('image',20,1.8)+'Add photo<input id="compPhoto" type="file" accept="image/*" style="display:none"></label><label class="press" style="display:inline-flex;align-items:center;gap:7px;color:var(--ember);cursor:pointer;font-size:13.5px;font-weight:600">'+ico('camera',20,1.8)+'Camera<input id="compPhoto2" type="file" accept="image/*" capture="environment" style="display:none"></label></div></div></div>');}
+function filterSheet(){function grp(title,opts,act,cur){return '<div style="font-weight:600;font-size:14px;color:var(--bone);margin-bottom:10px">'+title+'</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">'+opts.map(function(l,i){return '<button class="press chip'+(cur===i?' on':'')+'" data-act="'+act+'" data-idx="'+i+'">'+l+'</button>';}).join('')+'</div>';}
+ return sheetWrap('filter:close','<div style="font-weight:700;font-size:22px;color:var(--bone);margin-bottom:20px">Sort & filter</div>'+grp('Sort by',SORT_OPTS,'sort',state.sortIdx)+grp('When',WHEN_OPTS,'when',state.whenIdx)+grp('Price',PRICE_OPTS,'price',state.priceIdx)+'<div style="display:flex;gap:10px"><button class="press btn-ghost" data-act="filter:clear">Clear</button><button class="press btn" data-act="filter:close">Show results</button></div>');}
+
+/* ---------- chrome ---------- */
+function navItem(screen,label,icon){var on=state.screen===screen,unread=screen==='chat'?unreadChats():0;
+ return '<button class="press navitem'+(on?' on':'')+'" data-act="nav" data-screen="'+screen+'">'+ico(icon,22,on?2:1.8)+(unread?'<span class="dot"></span>':'')+'<span class="lab">'+label+'</span></button>';}
+function navbar(){return '<div class="navbar">'+navItem('home','Home','home')+navItem('discover','Discover','explore')+navItem('chat','Chat','chat')+navItem('tickets','Tickets','ticket')+navItem('profile','Profile','user')+'</div>';}
+function footerHTML(){
+ if(showTabs())return navbar();
+ var s=state.screen;
+ if(s==='detail'){var e=sel(),locked=e.premium&&!state.premium,cta=locked?'Unlock with Premium':(e.minPrice===0?'RSVP · Free':'Get tickets · from '+money(e.minPrice));return '<div class="footwrap"><button class="press btn" data-act="'+(locked?'nav" data-screen="premium':'book')+'"'+(locked?' style="background:var(--gold);color:#0B0A0C"':'')+'>'+cta+'</button></div>';}
+ if(s==='booking'){var t=curTier(),total=t.price*state.qty;return '<div class="footwrap"><button class="press btn" data-act="tocheckout" style="display:flex;align-items:center;justify-content:space-between"><span>'+(t.price===0?'Confirm RSVP':'Continue')+'</span><span style="opacity:.72">'+money(total)+'</span></button></div>';}
+ if(s==='checkout'){var t2=curTier(),paid=t2.price>0,total2=t2.price*state.qty+(paid&&!state.premium?2.5*state.qty:0);return '<div class="footwrap"><button class="press btn" data-act="pay">'+(paid?'Pay '+money(total2):'Confirm RSVP')+'</button></div>';}
+ if(s==='confirm')return '<div class="footwrap" style="display:flex;gap:10px"><button class="press btn-ghost" data-act="nav" data-screen="discover" style="flex:none;width:120px">Explore</button><button class="press btn" data-act="toticket" style="flex:1;width:auto">View ticket</button></div>';
+ if(s==='premium'&&!state.premium)return '<div class="footwrap"><button class="press btn" data-act="subscribe" style="background:var(--gold);color:#0B0A0C">Become a member · $12/mo</button><div style="text-align:center;font-size:11px;color:var(--ash);margin-top:8px">Cancel anytime. Auto-renews monthly until cancelled.</div></div>';
+ if(s==='create'){var st=state.create.step;return '<div class="footwrap" style="display:flex;gap:10px">'+(st>0?'<button class="press btn-ghost" data-act="create:back" style="flex:none;width:110px">Back</button>':'')+'<button class="press btn" data-act="'+(st<3?'create:next':'create:publish')+'" style="flex:1;width:auto">'+(st<3?'Continue':'Publish event')+'</button></div>';}
+ if(s==='published')return '<div class="footwrap" style="display:flex;gap:10px"><button class="press btn-ghost" data-act="nav" data-screen="home" style="flex:none;width:120px">Done</button><button class="press btn" data-act="viewpublished" style="flex:1;width:auto">View event</button></div>';
+ return '';}
+function toastHTML(m){return '<div style="position:absolute;bottom:calc(max(var(--bot),10px) + 88px);left:50%;transform:translateX(-50%);z-index:70;background:rgba(28,25,30,.95);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border:1px solid var(--line2);border-radius:999px;padding:12px 20px;font-size:13.5px;font-weight:600;color:var(--bone);white-space:nowrap;animation:toast .3s cubic-bezier(.22,1,.36,1) both;box-shadow:0 16px 40px -12px rgba(0,0,0,.7);max-width:88%;overflow:hidden;text-overflow:ellipsis">'+m+'</div>';}
+function screenHTML(){switch(state.screen){case 'home':return homeHTML();case 'discover':return discoverHTML();case 'tourist':return touristHTML();case 'notifications':return notificationsHTML();case 'chat':return chatHTML();case 'thread':return threadHTML();case 'tickets':return ticketsHTML();case 'profile':return profileHTML();case 'userprofile':return userProfileHTML();case 'premium':return premiumHTML();case 'settings':return settingsHTML();case 'create':return createHTML();case 'published':return publishedHTML();case 'detail':return detailHTML();case 'booking':return bookingHTML();case 'checkout':return checkoutHTML();case 'confirm':return confirmHTML();case 'ticket':return ticketHTML();default:return homeHTML();}}
+function showTabs(){return ['home','discover','chat','tickets','profile'].indexOf(state.screen)>-1;}
+function sheetsHTML(){if(state.pickerOpen)return pickerHTML();if(state.filterOpen)return filterSheet();if(state.moreOpen)return moreSheet();if(state.reportOpen)return reportSheet();if(state.composeOpen)return composeSheet();return '';}
+function deviceHTML(){return '<div id="app">'+screenHTML()+'</div><div id="footer">'+footerHTML()+'</div>'+sheetsHTML()+'<div id="toastLayer">'+(state.toast?toastHTML(state.toast):'')+'</div>';}
+
+/* ---------- render ---------- */
+var _rs=null;
+function render(){var device=document.getElementById('device');var oa=document.getElementById('app');var ps=oa?oa.scrollTop:0;device.innerHTML=deviceHTML();var app=document.getElementById('app');if(app&&state.screen!=='thread')app.scrollTop=(state.screen===_rs)?ps:0;_rs=state.screen;afterRender();}
+function afterRender(){
+ if(state.pickerOpen)initWheel();
+ if(state.screen==='thread'){var ts=document.getElementById('threadScroll');if(ts)ts.scrollTop=ts.scrollHeight;}
+ if(state._focusSearch){var si=document.getElementById('searchInput');if(si){si.focus();var v=si.value;si.value='';si.value=v;}state._focusSearch=false;}
+ var cp=document.getElementById('compPhoto');if(cp)cp.addEventListener('change',function(){window.__photoPick(this);});
+ var cp2=document.getElementById('compPhoto2');if(cp2)cp2.addEventListener('change',function(){window.__photoPick(this);});
+}
+function patchDiscover(){var b=document.getElementById('exploreBody');if(b)b.innerHTML=discoverBodyHTML();}
+
+/* ---------- wheel ---------- */
+function updateWheel(){var sc=document.getElementById('cwScroll');if(!sc)return;var items=sc.querySelectorAll('.witem');var mid=sc.scrollTop+sc.clientHeight/2;
+ for(var i=0;i<items.length;i++){var it=items[i];var c=it.offsetTop+ITEM_H/2;var d=c-mid;var ratio=d/ITEM_H;var ang=Math.max(-62,Math.min(62,ratio*-21));var op=Math.max(.16,1-Math.abs(ratio)*.36);var scl=Math.max(.8,1-Math.abs(ratio)*.07);it.style.transform='rotateX('+ang+'deg) translateZ('+(-Math.abs(ratio)*20)+'px) scale('+scl+')';it.style.opacity=op;var wl=it.querySelector('.wl');if(wl)wl.style.color=Math.abs(ratio)<.5?'var(--ember)':'var(--bone)';}}
+var _wt=null;
+function initWheel(){var sc=document.getElementById('cwScroll');if(!sc)return;sc.scrollTop=wheel.country*ITEM_H;updateWheel();sc.onscroll=function(){requestAnimationFrame(updateWheel);clearTimeout(_wt);_wt=setTimeout(function(){var idx=Math.max(0,Math.min(COUNTRIES.length-1,Math.round(sc.scrollTop/ITEM_H)));if(idx!==wheel.country){wheel.country=idx;wheel.city=0;var cpn=document.getElementById('cityPanel');if(cpn)cpn.innerHTML=cityPanelHTML();}},110);};}
+
+/* ---------- actions ---------- */
+var _tt=null;
+function toast(m){state.toast=m;var l=document.getElementById('toastLayer');if(l)l.innerHTML=toastHTML(m);clearTimeout(_tt);_tt=setTimeout(function(){state.toast='';var l2=document.getElementById('toastLayer');if(l2)l2.innerHTML='';},2100);}
+function closeSheets(){state.pickerOpen=state.filterOpen=state.moreOpen=state.reportOpen=state.composeOpen=false;}
+function go(s){state.screen=s;closeSheets();render();}
+function openCreate(){state.create={step:0,title:'',cat:'Nightlife',date:'',time:'',venue:'',city:cityName(),paid:false,price:'',about:'',cover:'Nightlife'};go('create');}
+function back(){
+ if(state.screen==='settings'){if(state.settingsKey&&state.settingsKey!=='Settings'){var sub={EditProfile:'Account',Blocked:'Privacy',Muted:'Privacy',Account:'Settings',Notifications:'Settings',Privacy:'Settings',Appearance:'Settings',Language:'Settings','Payment methods':'Settings',Premium:'Settings',Guidelines:'Privacy',Terms:'Settings',PrivacyPolicy:'Settings',Help:'Settings',About:'Settings'};state.settingsKey=sub[state.settingsKey]||'Settings';render();return;}return go('profile');}
+ var m={detail:state._from||'home',booking:'detail',checkout:'booking',confirm:'checkout',ticket:'tickets',saved:'profile',tourist:'discover',premium:state._from||'profile',userprofile:state._from||'home',thread:'chat',notifications:'home'};
+ go(m[state.screen]||'home');}
+window.__photoPick=function(inp){var f=inp.files&&inp.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(e){state.draftPhoto=e.target.result;render();};rd.readAsDataURL(f);};
+function publishEvent(){var c=state.create,id=GEN_ID++,price=c.paid&&c.price?(parseFloat(c.price)||0):0;
+ var ev={id:id,city:cityName(),country:countryName(),cat:c.cat,title:c.title||'Untitled event',host:'Ava Reyes',hostInit:'AR',hostBg:'#3a2f4a',hostEvents:1,bg:'#141215',when:(c.date||'Soon')+(c.time?' · '+c.time:''),dateLong:c.date||'Date to be confirmed',dateShort:c.date||'Soon',timeRange:c.time||'Time TBC',venue:c.venue||'Venue TBC',address:(c.venue||'Venue TBC')+' · '+cityName(),dist:0.4,going:1,friends:[],premium:false,about:c.about||'A new event on Event House.',tiers:c.paid?[{name:'General',desc:'Standard entry',price:price}]:[{name:'RSVP',desc:'Free entry',price:0}]};
+ ev.minPrice=ev.tiers[0].price;ev.priceLabel=ev.minPrice===0?'Free':money(ev.minPrice);EV_BY_ID[id]=ev;var ce=GEN_CACHE[cityName()];if(ce)ce.unshift(ev);state.publishedId=id;go('published');}
+function onClick(e){var t=e.target.closest('[data-act]');if(!t)return;var d=t.dataset,a=d.act;
+ switch(a){
+  case 'nav':if(d.screen==='create'){openCreate();break;}state._from=state.screen;go(d.screen);break;
+  case 'feed':state.feed=d.feed;render();break;
+  case 'open':state._from=(['home','discover','tickets','saved','tourist','userprofile','notifications'].indexOf(state.screen)>-1?state.screen:'home');state.selectedId=+d.id;state.ticketType=0;state.qty=1;go('detail');break;
+  case 'save':e.stopPropagation();var id=+d.id,ix=state.saved.indexOf(id);if(ix>-1)state.saved.splice(ix,1);else state.saved.push(id);render();break;
+  case 'followhost':state.followingHosts[d.host]=!state.followingHosts[d.host];render();toast(state.followingHosts[d.host]?'Following '+d.host:'Unfollowed '+d.host);break;
+  case 'followuser':state.followingUsers[d.key]=!state.followingUsers[d.key];render();toast(state.followingUsers[d.key]?'Following '+USERS[d.key].name:'Unfollowed');break;
+  case 'cat':state.exploreCat=d.cat;state.query='';go('discover');break;
+  case 'cat:clear':state.exploreCat=null;render();break;
+  case 'search:clear':state.query='';var si=document.getElementById('searchInput');if(si){si.value='';si.focus();}patchDiscover();var scc=document.getElementById('searchClear');if(scc)scc.style.display='none';break;
+  case 'picker':wheel.country=state.country;wheel.city=state.cityIdx;state.pickerOpen=true;render();break;
+  case 'picker:close':state.pickerOpen=false;render();break;
+  case 'wheelpick':var sc=document.getElementById('cwScroll');if(sc)sc.scrollTo({top:(+d.idx)*ITEM_H,behavior:'smooth'});break;
+  case 'citypick':wheel.city=+d.idx;var cpn=document.getElementById('cityPanel');if(cpn)cpn.innerHTML=cityPanelHTML();break;
+  case 'loc:confirm':state.country=wheel.country;state.cityIdx=wheel.city;state.exploreCat=null;state.query='';state.pickerOpen=false;state.screen='home';render();toast('Now exploring '+cityName());break;
+  case 'loc:visiting':state.country=wheel.country;state.cityIdx=wheel.city;state.pickerOpen=false;go('tourist');break;
+  case 'filter:open':state.filterOpen=true;render();break;
+  case 'filter:close':state.filterOpen=false;render();break;
+  case 'filter:clear':state.whenIdx=state.priceIdx=state.sortIdx=0;render();break;
+  case 'when':state.whenIdx=+d.idx;render();break;
+  case 'price':state.priceIdx=+d.idx;render();break;
+  case 'sort':state.sortIdx=+d.idx;render();break;
+  case 'host:open':openCreate();break;
+  case 'create:cat':state.create.cat=d.cat;render();break;
+  case 'create:free':state.create.paid=false;render();break;
+  case 'create:paid':state.create.paid=true;render();break;
+  case 'create:next':if(state.create.step===0&&!state.create.title.trim()){toast('Give your event a title');break;}state.create.step=Math.min(3,state.create.step+1);render();break;
+  case 'create:back':state.create.step=Math.max(0,state.create.step-1);render();break;
+  case 'create:exit':go('profile');break;
+  case 'create:publish':publishEvent();break;
+  case 'viewpublished':state._from='home';state.selectedId=state.publishedId;go('detail');break;
+  case 'book':state.ticketType=0;state.qty=1;go('booking');break;
+  case 'tier':state.ticketType=+d.idx;render();break;
+  case 'inc':state.qty=Math.min(state.qty+1,10);render();break;
+  case 'dec':state.qty=Math.max(state.qty-1,1);render();break;
+  case 'tocheckout':go('checkout');break;
+  case 'method':state.method=+d.idx;render();break;
+  case 'pay':var e2=sel();state.myTickets.unshift({eventId:e2.id,tier:state.ticketType,qty:state.qty,rel:'Soon',status:'confirmed',past:false});go('confirm');break;
+  case 'toticket':go('ticket');break;
+  case 'viewticket':state.selectedId=+d.id;state.ticketType=+d.tier;state.qty=+d.qty;state._from='tickets';go('ticket');break;
+  case 'tseg':state.ticketTab=d.seg;render();break;
+  case 'saved':go('saved');break;
+  case 'ptab':state.profileTab=d.tab;render();break;
+  case 'settings':state.settingsKey=d.key||'Settings';go('settings');break;
+  case 'toggle':state.notif[d.k]=!state.notif[d.k];render();break;
+  case 'toggleflag':state[d.f]=!state[d.f];render();break;
+  case 'back':back();break;
+  case 'notiftap':var n=NOTIFS[+d.idx];n.unread=false;if(n.act==='open'){state._from='notifications';state.selectedId=n.id;state.ticketType=0;state.qty=1;go('detail');}else if(n.act==='user'){state._from='notifications';state.profileUser=n.key;go('userprofile');}else if(n.act==='thread'){state._from='notifications';state.threadUser=n.key;var cv0=convoOf(n.key);if(cv0)cv0.unread=0;go('thread');}else if(n.act==='nav'){go(n.screen);}else render();break;
+  case 'readall':NOTIFS.forEach(function(x){x.unread=false;});render();break;
+  case 'signout':toast('Signed out');break;
+  case 'toast':toast(d.msg);break;
+  case 'thread':state._from=state.screen;state.threadUser=d.key;var cv=convoOf(d.key);if(cv)cv.unread=0;go('thread');break;
+  case 'send':doSend();break;
+  case 'user':state._from=(state.screen==='userprofile'?state._from:state.screen);state.profileUser=d.key;closeSheets();go('userprofile');break;
+  case 'more':state.moreCtx={type:d.mtype,key:d.key,id:d.id};state.moreOpen=true;render();break;
+  case 'more:close':state.moreOpen=false;render();break;
+  case 'mute':state.muted[d.key]=true;state.moreOpen=false;render();toast('Muted @'+USERS[d.key].handle);break;
+  case 'unmute':delete state.muted[d.key];render();toast('Unmuted');break;
+  case 'block':state.blocked[d.key]=true;state.muted[d.key]=true;state.moreOpen=false;render();toast('Blocked @'+USERS[d.key].handle);break;
+  case 'unblock':delete state.blocked[d.key];render();toast('Unblocked');break;
+  case 'report:open':state.reportCtx={rtype:d.rtype,key:d.key,id:d.id};state.moreOpen=false;state.reportOpen=true;render();break;
+  case 'report:close':state.reportOpen=false;render();break;
+  case 'report:reason':state.reportOpen=false;render();toast('Report received — we review within 24 hours');break;
+  case 'compose:open':state.composeOpen=true;render();break;
+  case 'compose:close':state.composeOpen=false;render();break;
+  case 'compose:rmphoto':state.draftPhoto=null;render();break;
+  case 'compose:post':doPost();break;
+  case 'likepost':toast('Liked');break;
+  case 'delpost':state.posts=state.posts.filter(function(p){return p.id!==d.id;});state.moreOpen=false;render();toast('Post deleted');break;
+  case 'subscribe':state.premium=true;go('profile');toast('Welcome to Premium — you’re verified');break;
+  case 'cancelprem':state.premium=false;state.settingsKey='Settings';render();toast('Membership cancelled');break;
+  case 'delacct':toast('Account deletion requested — check your email');break;
+ }}
+function doSend(){var inp=document.getElementById('msgInput');if(!inp)return;var v=inp.value.trim();if(!v)return;var cv=convoOf(state.threadUser);if(!cv){cv={user:state.threadUser,ago:'now',unread:0,msgs:[]};CONVOS.push(cv);}cv.msgs.push({f:'me',t:v,w:'now'});cv.ago='now';inp.value='';render();
+ setTimeout(function(){if(state.screen==='thread'&&state.threadUser===cv.user&&!state.blocked[cv.user]){cv.msgs.push({f:'them',t:pick(rng(hashStr(v+cv.msgs.length)),['see you there','love that','count me in','haha yes','on my way soon','perfect','sounds good']),w:'now'});render();}},900);}
+function doPost(){var txt=(state.composeText||'').trim();if(!txt&&!state.draftPhoto){toast('Write something or add a photo');return;}state.posts.unshift({id:'u'+GEN_ID++,author:'ava',ago:'now',text:txt||'',photo:state.draftPhoto,likes:0,replies:0,eventId:null});state.composeText='';state.draftPhoto=null;state.composeOpen=false;state.profileTab='posts';go('profile');toast('Posted');}
+function onInput(e){var t=e.target,di=t.getAttribute&&t.getAttribute('data-input');if(!di)return;
+ if(di==='search'){state.query=t.value;patchDiscover();var sc=document.getElementById('searchClear');if(sc)sc.style.display=t.value?'flex':'none';}
+ else if(di==='msg'){}
+ else if(di==='comp'){state.composeText=t.value;}
+ else if(di.indexOf('c_')===0){var f={c_title:'title',c_about:'about',c_date:'date',c_time:'time',c_venue:'venue',c_price:'price'}[di];if(f)state.create[f]=t.value;}}
+function onKey(e){if(e.key==='Enter'&&!e.shiftKey&&e.target.id==='msgInput'){e.preventDefault();doSend();}}
+document.addEventListener('click',onClick);
+document.addEventListener('input',onInput);
+document.addEventListener('keydown',onKey);
+render();
+// __APPEND_HERE__
+</script>
+</body>
+</html>
