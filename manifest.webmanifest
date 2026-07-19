@@ -1,6 +1,6 @@
 {
-  "name": "WTE — Went To Event",
-  "short_name": "WTE",
+  "name": "Went To Event",
+  "short_name": "Went To Event",
   "description": "Went To Event — discover events near you, join in two taps, keep a record of the good ones.",
   "start_url": "./",
   "scope": "./",
