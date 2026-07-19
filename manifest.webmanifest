@@ -1,16 +1,31 @@
 {
   "name": "Went To Event",
   "short_name": "Went To Event",
-  "description": "Went To Event — discover events near you, join in two taps, keep a record of the good ones.",
-  "start_url": "./",
+  "description": "Went To Event \u2014 discover events near you, join in two taps, keep a record of the good ones.",
+  "start_url": "./?v=25",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0B0A0C",
   "theme_color": "#0B0A0C",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

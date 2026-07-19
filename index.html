@@ -20,15 +20,20 @@
     --line:rgba(138,132,143,.14);--line2:rgba(138,132,143,.24);--good:#4BB07A;--gold:#C9A86A;
     --top:env(safe-area-inset-top);--bot:env(safe-area-inset-bottom);
   }
-  html,body{margin:0;padding:0;height:100%;overflow:hidden;overscroll-behavior:none}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;overscroll-behavior:none;background:#0B0A0C}
   body{background:#0B0A0C;color:var(--bone);
     font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','SF Pro Text','Helvetica Neue',system-ui,sans-serif;
     -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-  /* Anchor to the REAL viewport edges — never measure.
-     In an installed iOS PWA, 100dvh / innerHeight under-report by roughly the
-     status-bar height while the webview is actually full-screen, which left dead
-     space under the nav. top+bottom anchoring cannot under-report. */
+  /* Browser: anchor the shell to the viewport edges (Safari reports these honestly).
+     Installed iOS app (html.pwa): the LAYOUT VIEWPORT ends ~50-90pt ABOVE the real
+     screen bottom (letterbox) while the webview surface is full-screen — so anything
+     anchored to the viewport floats. In that mode we size the shell to the PHYSICAL
+     screen height (screen.height, set as --pwaH in JS), which iOS reports truthfully. */
   #stage{position:fixed;top:0;right:0;bottom:0;left:0;display:flex;align-items:stretch;justify-content:center;background:var(--ink)}
+  html.pwa #stage{bottom:auto;height:var(--pwaH,100vh)}
+  /* Hedge: the letterboxed standalone viewport can report safe-area-inset-bottom as 0.
+     Guarantee clearance for the home indicator when installed. */
+  html.pwa{--bot:max(env(safe-area-inset-bottom),29px)}
   #device{position:relative;width:100%;max-width:480px;height:100%;background:var(--ink);overflow:hidden;margin:0 auto;display:flex;flex-direction:column}
   @media(min-width:481px){
     #stage{background:radial-gradient(130% 90% at 15% -5%,#16100f 0%,#070609 62%);padding:0}
@@ -36,9 +41,12 @@
   }
   #app{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;position:relative;scrollbar-width:none;padding-top:max(var(--top),12px);overscroll-behavior-y:contain}
   #app::-webkit-scrollbar{display:none}
-  /* Nav is pinned to the REAL viewport bottom, not to a container that might come
-     up short in an installed PWA. It physically cannot float above the screen edge. */
-  #footer{position:fixed;bottom:0;left:0;right:0;z-index:36;display:flex;justify-content:center}
+  /* Nav anchors to the SHELL's bottom edge (#device fills #stage), NOT to the layout
+     viewport — position:fixed;bottom:0 is exactly what floated in the installed app,
+     because the standalone layout viewport ends above the physical screen bottom.
+     Browser: shell bottom == viewport bottom (unchanged). Installed: shell bottom ==
+     physical screen bottom via --pwaH. */
+  #footer{position:absolute;bottom:0;left:0;right:0;z-index:36;display:flex;justify-content:center}
   #footer>*{width:100%;max-width:480px}
   .scroll{scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .scroll::-webkit-scrollbar{display:none;width:0;height:0}
@@ -131,12 +139,44 @@ window.addEventListener('orientationchange',function(){setTimeout(syncFooterPad,
 window.addEventListener('pageshow',syncFooterPad);
 if(window.visualViewport){window.visualViewport.addEventListener('resize',syncFooterPad);}
 
+/* ---------- installed-app (iOS standalone) viewport lock ----------
+   In an installed home-screen app, iOS can end the layout viewport ABOVE the real
+   screen bottom (letterbox) — innerHeight/100dvh under-report while the webview is
+   truly full-screen. screen.height is the honest physical height in CSS points on
+   iOS, so in standalone we size the shell to it (--pwaH) instead of the viewport.
+   iOS ONLY: on Android standalone screen.height INCLUDES the status bar, so the
+   same lock would overshoot there. */
+var IS_IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+function isStandalone(){try{return navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);}catch(e){return false;}}
+function lockPWA(){
+ if(!(IS_IOS&&isStandalone()))return;
+ var de=document.documentElement;
+ de.classList.add('pwa');
+ var portrait=window.innerHeight>=window.innerWidth;
+ var a=screen.width||0,b=screen.height||0;
+ var h=portrait?Math.max(a,b):Math.min(a,b);
+ if(window.innerHeight>h)h=window.innerHeight; /* never shrink below what iOS admits to */
+ de.style.setProperty('--pwaH',h+'px');
+}
+lockPWA();
+window.addEventListener('resize',lockPWA);
+window.addEventListener('orientationchange',function(){setTimeout(lockPWA,300);});
+window.addEventListener('pageshow',lockPWA);
+
+/* live device diagnostics, shown in Settings → About */
+function diagText(){
+ var sab='?';
+ try{var p=document.createElement('div');p.style.cssText='position:fixed;left:-9999px;bottom:0;height:env(safe-area-inset-bottom)';document.body.appendChild(p);sab=Math.round(p.getBoundingClientRect().height);p.parentNode.removeChild(p);}catch(e){}
+ var ph=(getComputedStyle(document.documentElement).getPropertyValue('--pwaH')||'').trim()||'-';
+ return 'diag · inner '+window.innerWidth+'x'+window.innerHeight+' · screen '+screen.width+'x'+screen.height+' · '+(isStandalone()?'installed app':'browser')+' · safeB '+sab+' · pwaH '+ph;
+}
+
 /* ---------- icons (thin line, currentColor) ---------- */
 var RAW={
  home:'<path d="M4 11.4 12 5l8 6.4V19a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',
  explore:'<circle cx="12" cy="12" r="8.4"/><path d="M15.4 8.6l-2.1 4.7-4.7 2.1 2.1-4.7z"/>',
  chat:'<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4 3.5V16H6.5A2.5 2.5 0 0 1 4 13.5z"/>',
- ticket:'<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5v2.4a1.6 1.6 0 0 0 0 3.1v2.7A1.5 1.5 0 0 1 18.5 18h-13A1.5 1.5 0 0 1 4 16.5v-2.7a1.6 1.6 0 0 0 0-3.1z"/><path d="M14 7v11" stroke-dasharray="1.4 2.4"/>',
+ ticket:'<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h13A1.5 1.5 0 0 1 20 8.5v2.2a1.6 1.6 0 0 0 0 3.1v2.7A1.5 1.5 0 0 1 18.5 18h-13A1.5 1.5 0 0 1 4 16.5v-2.7a1.6 1.6 0 0 0 0-3.1z"/><path d="M14 7v11" stroke-dasharray="1.4 2.4"/>',
  user:'<circle cx="12" cy="8.2" r="3.4"/><path d="M5.5 20c1-3.5 3.7-5 6.5-5s5.5 1.5 6.5 5"/>',
  users:'<circle cx="9" cy="8.5" r="3"/><path d="M3.5 19c.9-3 2.9-4.3 5.5-4.3S13.6 16 14.5 19"/><path d="M15.5 6.2a3 3 0 0 1 0 5.6M17 14.8c2 .5 3.2 1.8 3.7 4.2"/>',
  plus:'<path d="M12 5v14M5 12h14"/>',
@@ -844,9 +884,9 @@ function settingsHTML(){var k=state.settingsKey,rows='';
  else if(k==='Terms'){rows=textPage('','These demo Terms of Service govern your use of Went To Event. Tickets are sold by hosts; Went To Event facilitates discovery and checkout. Do not resell tickets above face value. Full terms would appear here.');}
  else if(k==='PrivacyPolicy'){rows=textPage('','We collect the minimum needed to run the app: your profile, events you join, and approximate location while in use. We never sell your data. You can download or delete your data anytime from Account. Full policy would appear here.');}
  else if(k==='Help'){rows=sRow('help','Help centre','','toast','data-msg="Help centre"')+sRow('chat','Contact support','','toast','data-msg="Contact support"')+sRow('flag','Report a problem','','toast','data-msg="Report a problem"');}
- else if(k==='About'){rows=textPage('','<div style="color:var(--bone);font-weight:600;margin-bottom:6px">Went To Event</div>Version 2.4 · Rated 17+<br>Made for going out.<br><br>© 2026 Went To Event. All rights reserved.');}
- else{rows=sRow('user','Account','Profile, email, security','settings','data-key="Account"')+sRow('bell','Notifications','','settings','data-key="Notifications"')+sRow('shield','Privacy & safety','Private account, blocked, muted','settings','data-key="Privacy"')+sRow('moon','Appearance','Dark','settings','data-key="Appearance"')+sRow('globe','Language','English','settings','data-key="Language"')+sRow('ticket','Payment methods','','settings','data-key="Payment methods"')+(state.premium?sRow('diamond','Premium','Active','settings','data-key="Premium"'):'')+sRow('help','Help & support','','settings','data-key="Help"')+sRow('doc','Terms of Service','','settings','data-key="Terms"')+sRow('lock','Privacy Policy','','settings','data-key="PrivacyPolicy"')+sRow('info','About','v2.4','settings','data-key="About"');}
- var footer=k==='Settings'?'<div style="text-align:center;padding:20px 0 6px;font-size:11.5px;color:var(--ash)">Went To Event · v2.4 · Rated 17+</div><button class="press" data-act="signout" style="width:100%;background:none;border:none;color:#e5484d;font-size:14px;font-weight:600;padding:14px;cursor:pointer">Sign out</button>':'';
+ else if(k==='About'){rows=textPage('','<div style="color:var(--bone);font-weight:600;margin-bottom:6px">Went To Event</div>Version 2.5 · Rated 17+<br>Made for going out.<br><br>© 2026 Went To Event. All rights reserved.<br><br><span id="diagRow" style="font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--ash);word-break:break-all"></span>');}
+ else{rows=sRow('user','Account','Profile, email, security','settings','data-key="Account"')+sRow('bell','Notifications','','settings','data-key="Notifications"')+sRow('shield','Privacy & safety','Private account, blocked, muted','settings','data-key="Privacy"')+sRow('moon','Appearance','Dark','settings','data-key="Appearance"')+sRow('globe','Language','English','settings','data-key="Language"')+sRow('ticket','Payment methods','','settings','data-key="Payment methods"')+(state.premium?sRow('diamond','Premium','Active','settings','data-key="Premium"'):'')+sRow('help','Help & support','','settings','data-key="Help"')+sRow('doc','Terms of Service','','settings','data-key="Terms"')+sRow('lock','Privacy Policy','','settings','data-key="PrivacyPolicy"')+sRow('info','About','v2.5','settings','data-key="About"');}
+ var footer=k==='Settings'?'<div style="text-align:center;padding:20px 0 6px;font-size:11.5px;color:var(--ash)">Went To Event · v2.5 · Rated 17+</div><button class="press" data-act="signout" style="width:100%;background:none;border:none;color:#e5484d;font-size:14px;font-weight:600;padding:14px;cursor:pointer">Sign out</button>':'';
  var titles={Settings:'Settings',Account:'Account',EditProfile:'Edit profile',Notifications:'Notifications',Privacy:'Privacy & safety',Blocked:'Blocked accounts',Muted:'Muted accounts',Appearance:'Appearance',Language:'Language','Payment methods':'Payment methods',Premium:'Premium',Guidelines:'Community Guidelines',Terms:'Terms of Service',PrivacyPolicy:'Privacy Policy',Help:'Help & support',About:'About'};
  return '<div style="padding:8px 20px calc(var(--bot) + 24px)"><div style="display:flex;align-items:center;gap:14px;margin:2px 0 20px"><button class="press" data-act="back" style="width:40px;height:40px;border:1px solid var(--line2);border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--bone)">'+ico('chevL',20)+'</button><div style="font-weight:700;font-size:22px;letter-spacing:-.02em;color:var(--bone)">'+(titles[k]||'Settings')+'</div></div><div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden">'+rows+'</div>'+footer+'</div>';}
 
@@ -930,6 +970,7 @@ var _rs=null;
 function render(){var device=document.getElementById('device');var oa=document.getElementById('app');var ps=oa?oa.scrollTop:0;device.innerHTML=deviceHTML();var app=document.getElementById('app');if(app&&state.screen!=='thread')app.scrollTop=(state.screen===_rs)?ps:0;_rs=state.screen;afterRender();}
 function afterRender(){
  syncFooterPad();
+ var dr=document.getElementById('diagRow');if(dr)dr.textContent=diagText();
  if(state.pickerOpen)initWheel();
  if(state.screen==='thread'){var ts=document.getElementById('threadScroll');if(ts)ts.scrollTop=ts.scrollHeight;}
  if(state._focusSearch){var si=document.getElementById('searchInput');if(si){si.focus();var v=si.value;si.value='';si.value=v;}state._focusSearch=false;}
